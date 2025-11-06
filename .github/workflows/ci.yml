@@ -8,14 +8,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up PHP
+      - name: 🧩 Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
           extensions: redis, mongodb, pdo_mysql
 
-      - name: Install dependencies
+      - name: ⚙️ Install dependencies
         run: composer install --no-progress --no-suggest
 
-      - name: Run tests
-        run: vendor/bin/phpunit --coverage-text
+      - name: 🧪 Run PHPUnit
+        run: vendor/bin/phpunit --configuration phpunit.xml --coverage-text
