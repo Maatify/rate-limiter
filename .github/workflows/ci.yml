@@ -1,0 +1,21 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: redis, mongodb, pdo_mysql
+
+      - name: Install dependencies
+        run: composer install --no-progress --no-suggest
+
+      - name: Run tests
+        run: vendor/bin/phpunit --coverage-text
