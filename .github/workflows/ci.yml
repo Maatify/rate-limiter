@@ -18,7 +18,7 @@ jobs:
         run: composer install --no-progress --no-suggest
 
       - name: 🧪 Run PHPUnit
-        run: vendor/bin/phpunit --configuration phpunit.xml --coverage-text
+        run: vendor/bin/phpunit --configuration phpunit.xml
 
       - name: 📄 Upload test results
         if: always()
