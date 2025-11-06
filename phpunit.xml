@@ -6,6 +6,9 @@
         colors="true"
         verbose="true"
         failOnEmptyTestSuite="false"
+        failOnWarning="false"
+        failOnRisky="false"
+        failOnDeprecation="false"
 >
     <testsuites>
         <testsuite name="Maatify RateLimiter Test Suite">
@@ -17,5 +20,8 @@
         <include>
             <directory suffix=".php">src</directory>
         </include>
+        <report>
+            <text outputFile="php://stdout" showUncoveredFiles="false" />
+        </report>
     </coverage>
 </phpunit>
