@@ -68,10 +68,39 @@ jobs:
           echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
           sudo apt-get update -qq
           sudo apt-get install -y mongodb-mongosh > /dev/null
-          echo "🔍 Checking services health..."
-          redis-cli -h 127.0.0.1 ping
-          mysql -h 127.0.0.1 -uroot -proot -e "SHOW DATABASES;"
-          mongosh --eval "db.runCommand({ ping: 1 })"
+
+          echo "⏳ Waiting for Redis to be ready..."
+          for i in {1..10}; do
+            if redis-cli -h 127.0.0.1 ping > /dev/null 2>&1; then
+              echo "✅ Redis is ready!"
+              break
+            fi
+            echo "🔁 Redis not ready yet, retrying ($i/10)..."
+            sleep 2
+          done
+
+          echo "⏳ Waiting for MySQL to be ready..."
+          for i in {1..10}; do
+            if mysqladmin ping -h 127.0.0.1 -uroot -proot > /dev/null 2>&1; then
+              echo "✅ MySQL is ready!"
+              break
+            fi
+            echo "🔁 MySQL not ready yet, retrying ($i/10)..."
+            sleep 2
+          done
+
+          echo "⏳ Waiting for MongoDB to be ready..."
+          for i in {1..10}; do
+            if mongosh --eval "db.runCommand({ ping: 1 })" --quiet | grep -q '"ok" : 1'; then
+              echo "✅ MongoDB is ready!"
+              break
+            fi
+            echo "🔁 MongoDB not ready yet, retrying ($i/10)..."
+            sleep 2
+          done
+
+          echo "🟢 All services are healthy and ready to use!"
+      
 
       - name: 📥 Install Composer Dependencies
         run: |
