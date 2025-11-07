@@ -12,6 +12,8 @@
 A PSR-compliant Rate Limiter library supporting Redis, MongoDB, and MySQL
 — with dynamic driver resolver, middleware integration, and reusable enum contracts.
 
+> 🔗 [بالعربي](./README-AR.md)
+
 ---
 
 <!-- PHASE_STATUS_START -->
@@ -428,6 +430,57 @@ GLOBAL_RATE_WINDOW=3600
 BACKOFF_BASE=2
 BACKOFF_MAX=3600
 ```
+---
+
+## ⚙️ Environment Variables (Rate Limiter Configuration)
+
+These variables control the **global rate limit** and **exponential backoff behavior**  
+used across all actions and IP addresses.
+
+You can define them in your `.env`, `.env.local`, or CI environment.
+
+| Variable             | Description                                                                                      | Example              | Type            |
+|----------------------|--------------------------------------------------------------------------------------------------|----------------------|-----------------|
+| `GLOBAL_RATE_LIMIT`  | Maximum number of allowed actions per IP (or user) within the window duration.                   | `5`                  | integer         |
+| `GLOBAL_RATE_WINDOW` | Duration of the rate-limit window in seconds. After this period, counters reset.                 | `60` (1 minute)      | integer         |
+| `BACKOFF_BASE`       | Exponential backoff multiplier. Each violation increases delay exponentially by this base value. | `2` → 2, 4, 8, 16... | integer / float |
+| `BACKOFF_MAX`        | Maximum delay (in seconds) allowed by exponential backoff. Prevents unreasonably long waits.     | `3600` (1 hour)      | integer         |
+
+📘 **Formula:**  
+```
+
+backoff_seconds = min( BACKOFF_BASE ** violation_count , BACKOFF_MAX )
+
+````
+
+### 🔍 Example `.env` file
+```env
+# Basic local testing
+GLOBAL_RATE_LIMIT=5
+GLOBAL_RATE_WINDOW=60
+BACKOFF_BASE=2
+BACKOFF_MAX=3600
+````
+
+### 💡 Tips
+
+* Lower values (e.g., 5 req/min) are recommended for **login** or **OTP** endpoints.
+* Higher values are suitable for **public APIs**.
+* `BACKOFF_BASE=2` gives a balanced exponential delay pattern.
+* Always include a `Retry-After` header in responses to inform the client when to retry.
+
+🧱 Example exponential pattern:
+
+| Violation Count | Delay (seconds)         |
+|-----------------|-------------------------|
+| 1               | 2                       |
+| 2               | 4                       |
+| 3               | 8                       |
+| 4               | 16                      |
+| 5               | 32                      |
+| 6               | 64                      |
+| ...             | ... up to `BACKOFF_MAX` |
+
 
 ---
 
