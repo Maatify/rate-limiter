@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   php:
-    image: php:8.4-cli
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
     container_name: maatify-ci-php
     working_dir: /app
     volumes:
@@ -24,15 +26,13 @@ services:
       MONGO_DB: maatify_test
     command: >
       bash -c "
-        echo '📦 Installing Composer...' &&
-        curl -sS https://getcomposer.org/installer | php &&
-        mv composer.phar /usr/local/bin/composer &&
         echo '📦 Installing dependencies...' &&
         composer install --no-interaction --no-progress --prefer-dist &&
         composer dump-autoload -o &&
         echo '✅ Running tests...' &&
         vendor/bin/phpunit --configuration phpunit.xml --colors=always
       "
+  
   
 
   redis:

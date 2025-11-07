@@ -1,0 +1,20 @@
+# ---------------------------
+# 🐘 Maatify Rate Limiter - CI Build Image
+# ---------------------------
+FROM php:8.4-cli
+
+# 🧩 Install system dependencies
+RUN apt-get update -qq && apt-get install -y \
+    git unzip curl libssl-dev libzip-dev pkg-config gnupg \
+    && docker-php-ext-install zip pdo_mysql \
+    && pecl install redis mongodb xdebug \
+    && docker-php-ext-enable redis mongodb xdebug
+
+# 🧰 Install Composer globally
+RUN curl -sS https://getcomposer.org/installer | php && \
+    mv composer.phar /usr/local/bin/composer
+
+# 🧹 Clean up
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
