@@ -90,17 +90,23 @@ jobs:
           done
 
           echo "⏳ Waiting for MongoDB to be ready..."
-          for i in {1..10}; do
+          for i in {1..20}; do
             if mongosh "mongodb://127.0.0.1:27017" --eval "db.runCommand({ ping: 1 })" --quiet | grep -q '"ok" : 1'; then
               echo "✅ MongoDB is ready!"
               break
-            fi
-            echo "🔁 MongoDB not ready yet, retrying ($i/10)..."
-            sleep 2
+          fi
+          echo "🔁 MongoDB not ready yet, retrying ($i/20)..."
+          sleep 3
           done
+          
+          
+          if ! mongosh "mongodb://127.0.0.1:27017" --eval "db.runCommand({ ping: 1 })" --quiet | grep -q '"ok" : 1'; then
+            echo -e "\033[0;33m⚠️  MongoDB still not responding after full wait, continuing anyway...\033[0m"
+          else
+            echo -e "\033[0;32m🟢 All services are healthy and ready to use!\033[0m"
+          fi
 
-          echo -e "\033[0;32m🟢 All services are healthy and ready to use!\033[0m"
-      
+
 
       - name: 📥 Install Composer Dependencies
         run: |
