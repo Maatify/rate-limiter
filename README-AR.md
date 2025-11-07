@@ -270,7 +270,9 @@ composer require slim/slim
 ## 🧱 المطورون والاعتمادات
 
 **المطور:** [Maatify.dev](https://www.maatify.dev)
+
 **المسؤول:** محمد عبدالعليم
+
 **المشروع:** maatify:rate-limiter
 
 ---
