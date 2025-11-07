@@ -29,10 +29,13 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd "mysqladmin ping -h localhost -uroot -proot"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --default-authentication-plugin=mysql_native_password
+          --character-set-server=utf8mb4
+          --collation-server=utf8mb4_general_ci
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
       🍃 mongo:
         image: mongo:7
@@ -60,7 +63,7 @@ jobs:
         run: |
           echo "🔍 Installing client tools for service health checks..."
           sudo apt-get update -qq
-          sudo apt-get install -y redis-tools mongodb-clients > /dev/null
+          sudo apt-get install -y redis-tools mongodb-tools > /dev/null
           echo "🔍 Checking services health..."
           redis-cli -h 127.0.0.1 ping
           mysql -h 127.0.0.1 -uroot -proot -e "SHOW DATABASES;"
