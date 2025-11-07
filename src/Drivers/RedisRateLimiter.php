@@ -25,14 +25,15 @@ use Redis;
  * ⚙️ Class RedisRateLimiter
  *
  * 🧩 Purpose:
- * Provides a high-performance Redis-based implementation of the
- * {@see RateLimiterInterface}, leveraging Redis atomic operations
- * to handle rate limiting efficiently and safely under concurrency.
+ * Provides a high-performance Redis-based implementation of
+ * {@see RateLimiterInterface} for tracking and enforcing request limits
+ * with atomic operations and millisecond precision.
  *
  * ✅ Features:
- * - Atomic increments (`INCR`, `EXPIRE`) ensure accurate counting.
- * - Automatic TTL expiration for resetting counters.
- * - Suitable for distributed and high-throughput systems.
+ * - Atomic counter increments (`INCR`, `EXPIRE`) for thread-safe limits.
+ * - Automatic expiration after each interval.
+ * - Exponential backoff handling for aggressive clients.
+ * - Fast, scalable, and distributed by design.
  *
  * ⚙️ Example Usage:
  * ```php
@@ -85,8 +86,9 @@ final class RedisRateLimiter implements RateLimiterInterface
     /**
      * 🎯 Attempt an action under rate-limit constraints.
      *
-     * Increments the counter for the specified key/action/platform
-     * and throws {@see TooManyRequestsException} if the limit is exceeded.
+     * Increments the counter for the specified key/action/platform.
+     * Throws {@see TooManyRequestsException} if the configured limit is exceeded.
+     * Can also apply exponential backoff when requests exceed hard thresholds.
      *
      * @param string $key Unique identifier (IP, user ID, etc.).
      * @param RateLimitActionInterface $action The logical action being rate-limited.
@@ -95,38 +97,42 @@ final class RedisRateLimiter implements RateLimiterInterface
      * @return RateLimitStatusDTO Current rate-limit state after increment.
      *
      * @throws TooManyRequestsException When the configured limit is exceeded.
-     *
-     * ✅ Example:
-     * ```php
-     * $status = $limiter->attempt('192.168.1.5', RateLimitActionEnum::OTP_REQUEST, PlatformEnum::API);
-     * ```
      */
     public function attempt(string $key, RateLimitActionInterface $action, PlatformInterface $platform): RateLimitStatusDTO
     {
-        // 🔹 Retrieve rate-limit configuration for action
+        // 🔹 Retrieve rate-limit configuration
         $config = RateLimitConfig::get($action->value());
         $docKey = $this->key($key, $action, $platform);
         $limit = $config['limit'];
         $interval = $config['interval'];
 
-        // ⚙️ Increment request count atomically
+        // ⚙️ Atomically increment the request counter
         $current = (int) $this->redis->incr($docKey);
 
-        // 🕒 Apply TTL on first increment
+        // 🕒 Apply TTL only on first increment
         if ($current === 1) {
             $this->redis->expire($docKey, $interval);
         }
 
-        // 📊 Calculate remaining requests and TTL
+        // 📊 Calculate remaining requests and time-to-reset
         $ttl = (int) $this->redis->ttl($docKey);
         $remaining = max(0, $limit - $current);
 
-        // 🚫 Throw exception when over limit
+        // 🚫 Exceeded limit → apply exponential backoff logic
         if ($current > $limit) {
-            throw new TooManyRequestsException('Rate limit exceeded', 429);
+            // Generate a dynamic backoff DTO (for observability)
+            $backoffStatus = $this->applyBackoff($docKey, $current - $limit);
+            throw new TooManyRequestsException(
+                sprintf(
+                    'Rate limit exceeded. Retry after %d seconds (next allowed at %s).',
+                    $backoffStatus->backoffSeconds,
+                    $backoffStatus->nextAllowedAt
+                ),
+                429
+            );
         }
 
-        // ✅ Return structured DTO with live state
+        // ✅ Return structured DTO
         return new RateLimitStatusDTO(
             limit: $limit,
             remaining: $remaining,
@@ -145,11 +151,6 @@ final class RedisRateLimiter implements RateLimiterInterface
      * @param PlatformInterface $platform The platform context.
      *
      * @return bool True if the Redis key was deleted successfully.
-     *
-     * ✅ Example:
-     * ```php
-     * $limiter->reset('user456', RateLimitActionEnum::REGISTER, PlatformEnum::MOBILE);
-     * ```
      */
     public function reset(string $key, RateLimitActionInterface $action, PlatformInterface $platform): bool
     {
@@ -159,37 +160,82 @@ final class RedisRateLimiter implements RateLimiterInterface
     /**
      * 🔍 Retrieve rate-limit status without incrementing counters.
      *
-     * Reads the current counter and TTL from Redis without affecting state.
-     * Useful for dashboards, monitoring, or debugging rate-limit state.
+     * Reads the current counter and TTL from Redis without altering the state.
+     * Useful for dashboards, monitoring, or diagnostics.
      *
      * @param string $key Unique identifier (IP, user ID, token, etc.).
      * @param RateLimitActionInterface $action The rate-limited action.
      * @param PlatformInterface $platform The platform context.
      *
      * @return RateLimitStatusDTO Snapshot of the current rate-limit state.
-     *
-     * ✅ Example:
-     * ```php
-     * $status = $limiter->status('192.168.1.2', RateLimitActionEnum::API_CALL, PlatformEnum::API);
-     * echo $status->remaining;
-     * ```
      */
     public function status(string $key, RateLimitActionInterface $action, PlatformInterface $platform): RateLimitStatusDTO
     {
-        // 🔹 Retrieve configuration and current state
         $config = RateLimitConfig::get($action->value());
         $docKey = $this->key($key, $action, $platform);
 
-        // 📊 Read counter and TTL from Redis
         $count = (int) $this->redis->get($docKey);
         $ttl = (int) $this->redis->ttl($docKey);
         $remaining = max(0, $config['limit'] - $count);
 
-        // 🧠 Return a static snapshot DTO
         return new RateLimitStatusDTO(
             limit: $config['limit'],
             remaining: $remaining,
             resetAfter: $ttl > 0 ? $ttl : $config['interval']
+        );
+    }
+
+    /**
+     * 🧮 Calculate an exponential backoff delay.
+     *
+     * 🎯 Formula:
+     * ```
+     * delay = min(base^attempts, max)
+     * ```
+     *
+     * @param int $attempts Number of excessive attempts beyond the limit.
+     * @param int $base Exponential growth factor (default: 2).
+     * @param int $max Maximum backoff time in seconds (default: 3600).
+     *
+     * @return int Calculated backoff duration in seconds.
+     *
+     * ✅ Example:
+     * ```php
+     * $delay = $this->calculateBackoff(3); // 8 seconds
+     * ```
+     */
+    private function calculateBackoff(int $attempts, int $base = 2, int $max = 3600): int
+    {
+        return min(pow($base, $attempts), $max);
+    }
+
+    /**
+     * 🕒 Apply exponential backoff logic after exceeding the limit.
+     *
+     * Resets the Redis TTL to enforce a cooldown period, then returns
+     * a DTO describing when the next allowed attempt will be permitted.
+     *
+     * @param string $key Redis key being throttled.
+     * @param int $attempts Number of attempts beyond the limit.
+     *
+     * @return RateLimitStatusDTO DTO containing backoff information.
+     */
+    private function applyBackoff(string $key, int $attempts): RateLimitStatusDTO
+    {
+        $backoff = $this->calculateBackoff($attempts);
+        $this->redis->expire($key, $backoff);
+
+        $nextAllowed = (new \DateTimeImmutable())
+            ->modify("+{$backoff} seconds")
+            ->format('Y-m-d H:i:s');
+
+        return new RateLimitStatusDTO(
+            limit: 0,
+            remaining: 0,
+            resetAfter: $backoff,
+            retryAfter: $backoff,
+            backoffSeconds: $backoff,
+            nextAllowedAt: $nextAllowed
         );
     }
 }

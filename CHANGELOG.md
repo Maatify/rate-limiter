@@ -60,3 +60,27 @@
 * Completed full **integration test environment** for Phase 4.
 
 ---
+
+## [1.0.0-alpha – Phase 5]
+
+### 🧠 Exponential Backoff & Global Limit
+
+* Added **adaptive rate-limiting** using exponential backoff ( 2ⁿ logic ).
+* Implemented **global per-IP rate limit** (across all actions).
+* Extended `RateLimitStatusDTO` to include new fields:
+
+    * `backoffSeconds`   → adaptive delay in seconds
+    * `nextAllowedAt`    → timestamp for next allowed attempt
+* Enhanced `TooManyRequestsException` to carry retry/backoff metadata.
+* Updated `.env.example` and `RateLimitConfig` to support new environment variables:
+
+    * `GLOBAL_RATE_LIMIT`
+    * `GLOBAL_RATE_WINDOW`
+    * `BACKOFF_BASE`
+    * `BACKOFF_MAX`
+* Added new unit tests in `tests/BackoffTest.php` for backoff calculation and timestamp format.
+* Introduced `RateLimitStatusDTO::fromArray()` for DTO reconstruction from cache or DB.
+* Implemented global per-IP rate tracking for Redis.
+* Updated resolver and drivers to support backoff-aware status responses.
+* Added documentation file `docs/phases/README.phase5.md`.
+

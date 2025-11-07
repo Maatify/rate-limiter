@@ -57,13 +57,21 @@ use MongoDB\BSON\UTCDateTime;
 final class MongoRateLimiter implements RateLimiterInterface
 {
     /**
+     * @var Collection MongoDB collection instance for rate-limit storage.
+     */
+    private readonly Collection $collection;
+
+    /**
      * 🧠 Constructor
      *
      * Initializes a MongoDB collection for persistent rate-limit tracking.
      *
      * @param Collection $collection MongoDB collection used for storing rate-limit entries.
      */
-    public function __construct(private readonly Collection $collection) {}
+    public function __construct(Collection $collection)
+    {
+        $this->collection = $collection;
+    }
 
     /**
      * 🎯 Attempt an action and increment the rate-limit counter.
@@ -97,7 +105,8 @@ final class MongoRateLimiter implements RateLimiterInterface
             ['_id' => $docKey],
             [
                 '$inc' => ['count' => 1],
-                '$setOnInsert' => ['created_at' => $now]
+                '$setOnInsert' => ['created_at' => $now],
+                '$set' => ['last_attempt' => $now],
             ],
             ['upsert' => true]
         );
@@ -138,8 +147,12 @@ final class MongoRateLimiter implements RateLimiterInterface
      */
     public function reset(string $key, RateLimitActionInterface $action, PlatformInterface $platform): bool
     {
+        // 🔹 Compose the unique document identifier
+        $docId = "{$platform->value()}_{$action->value()}_{$key}";
+
+        // 🗑️ Delete and return success flag
         return (bool) $this->collection
-            ->deleteOne(['_id' => "{$platform->value()}_{$action->value()}_{$key}"])
+            ->deleteOne(['_id' => $docId])
             ->getDeletedCount();
     }
 
@@ -163,9 +176,10 @@ final class MongoRateLimiter implements RateLimiterInterface
      */
     public function status(string $key, RateLimitActionInterface $action, PlatformInterface $platform): RateLimitStatusDTO
     {
-        // 🔹 Retrieve current state
+        // 🔹 Retrieve current configuration and document
         $config = RateLimitConfig::get($action->value());
-        $record = $this->collection->findOne(['_id' => "{$platform->value()}_{$action->value()}_{$key}"]);
+        $docId = "{$platform->value()}_{$action->value()}_{$key}";
+        $record = $this->collection->findOne(['_id' => $docId]);
         $count = $record['count'] ?? 0;
 
         // 🧠 Return structured status object
@@ -173,6 +187,75 @@ final class MongoRateLimiter implements RateLimiterInterface
             limit: $config['limit'],
             remaining: $config['limit'] - $count,
             resetAfter: $config['interval']
+        );
+    }
+
+    /**
+     * ⚙️ Calculate exponential backoff duration.
+     *
+     * 🧠 This method computes the delay time (in seconds) before the next
+     * allowed attempt using exponential growth logic.
+     *
+     * @param int $attempts Number of failed or consecutive attempts.
+     * @param int $base Base multiplier for the backoff (default 2).
+     * @param int $max Maximum allowed backoff time (in seconds).
+     *
+     * @return int Calculated backoff duration in seconds.
+     *
+     * ✅ Example:
+     * ```php
+     * $delay = $this->calculateBackoff(3); // 8 seconds
+     * ```
+     */
+    private function calculateBackoff(int $attempts, int $base = 2, int $max = 3600): int
+    {
+        return min(pow($base, $attempts), $max);
+    }
+
+    /**
+     * 🔒 Apply exponential backoff and update MongoDB state.
+     *
+     * Stores the calculated backoff duration and next allowed attempt time
+     * in the MongoDB record for analytical or enforcement use.
+     *
+     * @param string $key Unique key (e.g., IP, user_id, token).
+     * @param int $attempts Current number of failed or blocked attempts.
+     *
+     * @return RateLimitStatusDTO DTO describing the applied backoff status.
+     *
+     * ✅ Example:
+     * ```php
+     * $dto = $this->applyBackoff('user123', 3);
+     * echo $dto->nextAllowedAt;
+     * ```
+     */
+    private function applyBackoff(string $key, int $attempts): RateLimitStatusDTO
+    {
+        // ⏱️ Calculate next backoff window
+        $backoff = $this->calculateBackoff($attempts);
+        $nextAllowed = (new \DateTimeImmutable("+{$backoff} seconds"))->format('Y-m-d H:i:s');
+
+        // 🧾 Update Mongo document with new blocked_until and backoff metadata
+        $this->collection->updateOne(
+            ['_id' => $key],
+            [
+                '$set' => [
+                    'blocked_until' => new \MongoDB\BSON\UTCDateTime(strtotime($nextAllowed) * 1000),
+                    'backoff_seconds' => $backoff,
+                ]
+            ],
+            ['upsert' => true]
+        );
+
+        // 📦 Return a structured DTO describing the applied backoff
+        return new RateLimitStatusDTO(
+            limit: 0,
+            remaining: 0,
+            resetAfter: $backoff,
+            retryAfter: $backoff,
+            blocked: true,
+            backoffSeconds: $backoff,
+            nextAllowedAt: $nextAllowed
         );
     }
 }

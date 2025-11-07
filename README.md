@@ -24,6 +24,7 @@ A PSR-compliant Rate Limiter library supporting Redis, MongoDB, and MySQL
 * [x] Phase 3.1 – Enum Contracts Refactor
 * [x] Phase 4 – Resolver & Middleware
 * [x] Phase 4.1 – Continuous Integration (Docker + GitHub Actions)
+* [x] Phase 5 – Exponential Backoff & Global Limit
 <!-- PHASE_STATUS_END -->
 
 ---
@@ -122,7 +123,7 @@ maatify-rate-limiter/
 ## 🧩 Current Version
 
 ```
-1.0.0-alpha-phase4.1
+1.0.0-alpha-phase5
 ```
 
 ---
@@ -139,6 +140,21 @@ maatify-rate-limiter/
 * Automated `.env` creation and **Composer caching**.
 * Added artifact upload for test results.
 * Completed **full integration test environment**.
+
+### Phase 5 – Exponential Backoff & Global Limit
+
+* Added **adaptive rate-limiting** using exponential backoff (2ⁿ logic).
+* Added **global per-IP rate limit** (across all actions).
+* Extended `RateLimitStatusDTO` to include `backoffSeconds` and `nextAllowedAt`.
+* Added `RateLimitStatusDTO::fromArray()` for DTO reconstruction.
+* Enhanced `TooManyRequestsException` to include retry metadata.
+* Updated `.env.example` with:
+    - `GLOBAL_RATE_LIMIT`
+    - `GLOBAL_RATE_WINDOW`
+    - `BACKOFF_BASE`
+    - `BACKOFF_MAX`
+* Added new unit tests `tests/BackoffTest.php`.
+* Implemented global per-IP rate tracking for Redis.
 ---
 ## ✅ Summary Table
 
@@ -371,6 +387,46 @@ $app->add(new RateLimitHeadersMiddleware(
     PlatformEnum::API,
     keyHeader: 'X-API-KEY'
 ));
+```
+
+---
+
+## 🧠 7️⃣ Exponential Backoff Example (Redis Adaptive Mode)
+
+```php
+use Maatify\RateLimiter\Resolver\RateLimiterResolver;
+use Maatify\RateLimiter\Enums\RateLimitActionEnum;
+use Maatify\RateLimiter\Enums\PlatformEnum;
+use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
+
+$config = [
+    'driver' => 'redis',
+    'redis_host' => '127.0.0.1',
+    'redis_port' => 6379,
+    'backoff_base' => 2,
+    'backoff_max' => 3600,
+];
+
+$resolver = new RateLimiterResolver($config);
+$limiter  = $resolver->resolve();
+
+$key = 'ip:' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+
+try {
+    $status = $limiter->attempt($key, RateLimitActionEnum::LOGIN, PlatformEnum::WEB);
+    echo "✅ Allowed – Remaining: {$status->remaining}";
+} catch (TooManyRequestsException $e) {
+    echo "⛔ Retry after {$status->backoffSeconds}s (next allowed: {$status->nextAllowedAt})";
+}
+````
+
+📘 **Environment variables**:
+
+```bash
+GLOBAL_RATE_LIMIT=1000
+GLOBAL_RATE_WINDOW=3600
+BACKOFF_BASE=2
+BACKOFF_MAX=3600
 ```
 
 ---

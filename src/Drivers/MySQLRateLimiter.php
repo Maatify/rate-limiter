@@ -25,14 +25,14 @@ use PDO;
  * ⚙️ Class MySQLRateLimiter
  *
  * 🧩 Purpose:
- * Implements the {@see RateLimiterInterface} using **MySQL** as the storage backend.
- * Tracks request counts per unique key (IP, user, token, etc.) and enforces
- * rate-limit rules defined in {@see RateLimitConfig}.
+ * Implements the {@see RateLimiterInterface} using **MySQL** as the persistent storage backend.
+ * Tracks and enforces rate limits based on key identifiers (IP, user ID, token, etc.)
+ * for different actions and platforms using atomic SQL operations.
  *
- * ✅ Features:
- * - Compatible with distributed systems sharing the same database.
- * - Uses `INSERT ... ON DUPLICATE KEY UPDATE` for atomic counter increments.
- * - Persists rate-limit activity for analysis and long-term tracking.
+ * ✅ Key Features:
+ * - Fully compatible with distributed systems that share a MySQL database.
+ * - Uses `INSERT ... ON DUPLICATE KEY UPDATE` for atomic, race-free increments.
+ * - Enables persistent tracking for analytics, debugging, or administrative purposes.
  *
  * ⚙️ Example:
  * ```php
@@ -53,27 +53,36 @@ use PDO;
 final class MySQLRateLimiter implements RateLimiterInterface
 {
     /**
+     * @var PDO Active PDO instance used for all MySQL operations.
+     */
+    private readonly PDO $pdo;
+
+    /**
      * 🧠 Constructor
      *
      * Initializes the MySQL-based rate limiter with a PDO connection.
      *
      * @param PDO $pdo Active PDO instance connected to the database.
      */
-    public function __construct(private readonly PDO $pdo) {}
+    public function __construct(PDO $pdo)
+    {
+        $this->pdo = $pdo;
+    }
 
     /**
      * 🎯 Attempt an action and increment the rate-limit counter.
      *
      * Inserts or updates a record in the `ip_rate_limits` table for the specified key.
-     * Throws {@see TooManyRequestsException} when the configured request limit is exceeded.
+     * If the key already exists, its counter is incremented atomically.
+     * Throws {@see TooManyRequestsException} when the request limit is reached or exceeded.
      *
-     * @param string $key Unique key (e.g., IP, user ID, token).
-     * @param RateLimitActionInterface $action The rate-limited logical action.
-     * @param PlatformInterface $platform The platform or context of the request.
+     * @param string $key Unique identifier (IP, user ID, token, etc.).
+     * @param RateLimitActionInterface $action The logical action being rate-limited.
+     * @param PlatformInterface $platform The platform or request context (e.g., web, api, mobile).
      *
-     * @return RateLimitStatusDTO Updated rate-limit status.
+     * @return RateLimitStatusDTO A DTO describing the updated rate-limit state.
      *
-     * @throws TooManyRequestsException When the limit is reached or exceeded.
+     * @throws TooManyRequestsException When the configured rate limit is exceeded.
      *
      * ✅ Example:
      * ```php
@@ -82,11 +91,11 @@ final class MySQLRateLimiter implements RateLimiterInterface
      */
     public function attempt(string $key, RateLimitActionInterface $action, PlatformInterface $platform): RateLimitStatusDTO
     {
-        // 🔹 Load configuration and compose unique key
+        // 🔹 Load configuration and compose unique rate-limit key
         $config = RateLimitConfig::get($action->value());
         $key = "{$platform->value()}_{$action->value()}_{$key}";
 
-        // ⚙️ Insert or increment count atomically
+        // ⚙️ Atomic upsert: insert or increment counter
         $stmt = $this->pdo->prepare("
             INSERT INTO ip_rate_limits (key_name, count, last_attempt)
             VALUES (:key, 1, NOW())
@@ -94,17 +103,17 @@ final class MySQLRateLimiter implements RateLimiterInterface
         ");
         $stmt->execute(['key' => $key]);
 
-        // 🔍 Retrieve current count
+        // 📊 Retrieve current request count
         $count = (int) $this->pdo
             ->query("SELECT count FROM ip_rate_limits WHERE key_name = '{$key}'")
             ->fetchColumn();
 
-        // 🚫 Throw if exceeded
+        // 🚫 If count exceeds configured limit, block the request
         if ($count > $config['limit']) {
             throw new TooManyRequestsException('Rate limit exceeded', 429);
         }
 
-        // ✅ Return DTO
+        // ✅ Return DTO representing the new rate-limit state
         return new RateLimitStatusDTO(
             limit: $config['limit'],
             remaining: $config['limit'] - $count,
@@ -115,14 +124,14 @@ final class MySQLRateLimiter implements RateLimiterInterface
     /**
      * ♻️ Reset the rate-limit record for a given key/action/platform.
      *
-     * Deletes the rate-limit entry from the database for the specific key.
-     * Useful for manual resets or administrative overrides.
+     * Deletes the rate-limit entry from the database for a specific key.
+     * Commonly used for admin resets, testing, or programmatic overrides.
      *
      * @param string $key Unique key (e.g., IP, user ID, token).
-     * @param RateLimitActionInterface $action The rate-limited logical action.
-     * @param PlatformInterface $platform The platform or context of the request.
+     * @param RateLimitActionInterface $action The action being reset.
+     * @param PlatformInterface $platform The platform or execution context.
      *
-     * @return bool True if the record was deleted successfully.
+     * @return bool True if the record was successfully deleted, false otherwise.
      *
      * ✅ Example:
      * ```php
@@ -131,22 +140,25 @@ final class MySQLRateLimiter implements RateLimiterInterface
      */
     public function reset(string $key, RateLimitActionInterface $action, PlatformInterface $platform): bool
     {
+        // 🧩 Compose composite rate-limit key
         $key = "{$platform->value()}_{$action->value()}_{$key}";
+
+        // 🗑️ Delete record from table
         $stmt = $this->pdo->prepare("DELETE FROM ip_rate_limits WHERE key_name = ?");
         return $stmt->execute([$key]);
     }
 
     /**
-     * 🔍 Retrieve current rate-limit status without incrementing counters.
+     * 🔍 Retrieve current rate-limit status without modifying counters.
      *
-     * Fetches the current count for the given key and returns a snapshot of
-     * the remaining quota and reset time, without updating the record.
+     * Returns a static snapshot of the rate-limit state (remaining requests, reset interval)
+     * without altering or incrementing the counter.
      *
-     * @param string $key Unique key (e.g., IP, user ID, token).
-     * @param RateLimitActionInterface $action The rate-limited logical action.
-     * @param PlatformInterface $platform The platform or context of the request.
+     * @param string $key Unique identifier (e.g., IP, user ID, token).
+     * @param RateLimitActionInterface $action The logical action being inspected.
+     * @param PlatformInterface $platform The platform context (e.g., web, api).
      *
-     * @return RateLimitStatusDTO Snapshot of the rate-limit state.
+     * @return RateLimitStatusDTO A DTO representing the current rate-limit state.
      *
      * ✅ Example:
      * ```php
@@ -156,20 +168,91 @@ final class MySQLRateLimiter implements RateLimiterInterface
      */
     public function status(string $key, RateLimitActionInterface $action, PlatformInterface $platform): RateLimitStatusDTO
     {
-        // 🔹 Retrieve configuration and key
+        // 🔹 Build full rate-limit key and load configuration
         $config = RateLimitConfig::get($action->value());
         $key = "{$platform->value()}_{$action->value()}_{$key}";
 
-        // 📊 Query the current count
+        // 📊 Query for the current counter value
         $stmt = $this->pdo->prepare("SELECT count FROM ip_rate_limits WHERE key_name = ?");
         $stmt->execute([$key]);
         $count = (int) $stmt->fetchColumn();
 
-        // 🧠 Return the current rate-limit status
+        // 🧠 Return a snapshot DTO describing the current rate-limit status
         return new RateLimitStatusDTO(
             limit: $config['limit'],
             remaining: max(0, $config['limit'] - $count),
             resetAfter: $config['interval']
+        );
+    }
+
+    /**
+     * ⚙️ Calculate exponential backoff duration.
+     *
+     * 🧠 Computes the delay (in seconds) before the next allowed attempt
+     * using an exponential backoff strategy.
+     *
+     * @param int $attempts Number of consecutive failed or blocked attempts.
+     * @param int $base Base growth multiplier (default = 2).
+     * @param int $max Maximum backoff duration (default = 3600 seconds).
+     *
+     * @return int Calculated backoff duration in seconds.
+     *
+     * ✅ Example:
+     * ```php
+     * $delay = $this->calculateBackoff(3); // Returns 8 seconds
+     * ```
+     */
+    private function calculateBackoff(int $attempts, int $base = 2, int $max = 3600): int
+    {
+        return min(pow($base, $attempts), $max);
+    }
+
+    /**
+     * 🔒 Apply exponential backoff to a MySQL-stored rate-limit record.
+     *
+     * Updates or inserts a record in the database to reflect a temporary block period,
+     * including `blocked_until` and `backoff_seconds` metadata.
+     *
+     * @param string $key Unique identifier (e.g., IP, user ID, token).
+     * @param int $attempts Current number of failed or blocked attempts.
+     *
+     * @return RateLimitStatusDTO A DTO describing the applied backoff and next allowed time.
+     *
+     * ✅ Example:
+     * ```php
+     * $status = $this->applyBackoff('user123', 4);
+     * echo $status->nextAllowedAt;
+     * ```
+     */
+    private function applyBackoff(string $key, int $attempts): RateLimitStatusDTO
+    {
+        // ⏱️ Compute next backoff duration
+        $backoff = $this->calculateBackoff($attempts);
+        $nextAllowed = (new \DateTimeImmutable("+{$backoff} seconds"))->format('Y-m-d H:i:s');
+
+        // 🧾 Update or insert backoff data into database
+        $stmt = $this->pdo->prepare("
+            INSERT INTO ip_rate_limits (rate_key, blocked_until, backoff_seconds)
+            VALUES (:key, :until, :backoff)
+            ON DUPLICATE KEY UPDATE
+                blocked_until = VALUES(blocked_until),
+                backoff_seconds = VALUES(backoff_seconds)
+        ");
+        $stmt->execute([
+            'key' => $key,
+            'until' => $nextAllowed,
+            'backoff' => $backoff
+        ]);
+
+        // 📦 Return structured DTO summarizing current backoff status
+        return new RateLimitStatusDTO(
+            limit: 0,
+            remaining: 0,
+            resetAfter: $backoff,
+            retryAfter: $backoff,
+            blocked: true,
+            backoffSeconds: $backoff,
+            nextAllowedAt: $nextAllowed
         );
     }
 }

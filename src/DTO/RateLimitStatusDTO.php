@@ -17,13 +17,13 @@ namespace Maatify\RateLimiter\DTO;
  * 🎯 Class RateLimitStatusDTO
  *
  * 🧩 Purpose:
- * A simple Data Transfer Object (DTO) that encapsulates the
- * current rate-limit state for a client, including limit, remaining
- * attempts, reset timing, and block status.
+ * Encapsulates the current rate-limit status for a given client,
+ * including limits, remaining requests, reset window, retry info,
+ * and adaptive backoff metadata.
  *
- * ⚙️ Typical use case:
- * This DTO is returned by the RateLimiter when checking or retrieving
- * the status of a particular IP/action/platform combination.
+ * ⚙️ Typical Use Case:
+ * Returned by a RateLimiter driver after performing an attempt or status check.
+ * Can be serialized to JSON for APIs or logs.
  *
  * ✅ Example:
  * ```php
@@ -31,10 +31,12 @@ namespace Maatify\RateLimiter\DTO;
  *
  * $status = new RateLimitStatusDTO(
  *     limit: 5,
- *     remaining: 2,
+ *     remaining: 0,
  *     resetAfter: 60,
  *     retryAfter: 30,
- *     blocked: false
+ *     blocked: true,
+ *     backoffSeconds: 8,
+ *     nextAllowedAt: '2025-11-07 01:05:23'
  * );
  *
  * print_r($status->toArray());
@@ -45,13 +47,15 @@ namespace Maatify\RateLimiter\DTO;
 final class RateLimitStatusDTO
 {
     /**
-     * 🧠 Constructor initializes a snapshot of the current rate-limit status.
+     * 🧠 Constructor initializes a snapshot of the rate-limit status.
      *
-     * @param int  $limit       Maximum allowed requests within the rate-limit window.
-     * @param int  $remaining   Remaining number of requests before hitting the limit.
-     * @param int  $resetAfter  Seconds until counters reset automatically.
-     * @param int|null $retryAfter Optional seconds to wait before retrying (if temporarily blocked).
-     * @param bool $blocked     Indicates whether the client is currently blocked.
+     * @param int         $limit          Max allowed requests within the rate-limit window.
+     * @param int         $remaining      Remaining number of allowed requests before hitting the limit.
+     * @param int         $resetAfter     Seconds until counters reset automatically.
+     * @param int|null    $retryAfter     Optional seconds to wait before retrying (if temporarily blocked).
+     * @param bool        $blocked        Indicates whether the client is currently blocked.
+     * @param int|null    $backoffSeconds Optional adaptive backoff delay in seconds.
+     * @param string|null $nextAllowedAt  UTC timestamp when the next request is allowed.
      */
     public function __construct(
         public readonly int $limit,
@@ -59,6 +63,8 @@ final class RateLimitStatusDTO
         public readonly int $resetAfter,
         public readonly ?int $retryAfter = null,
         public readonly bool $blocked = false,
+        public ?int $backoffSeconds = null,
+        public ?string $nextAllowedAt = null,
     ) {}
 
     /**
@@ -71,24 +77,26 @@ final class RateLimitStatusDTO
      *     remaining: int,
      *     reset_after: int,
      *     retry_after: int|null,
-     *     blocked: bool
+     *     blocked: bool,
+     *     backoff_seconds: int|null,
+     *     next_allowed_at: string|null
      * }
      *
      * ✅ Example:
      * ```php
-     * $array = $status->toArray();
-     * echo json_encode($array);
+     * echo json_encode($status->toArray(), JSON_PRETTY_PRINT);
      * ```
      */
     public function toArray(): array
     {
-        // ⚙️ Return structured rate-limit data for output or transport
         return [
             'limit' => $this->limit,
             'remaining' => $this->remaining,
             'reset_after' => $this->resetAfter,
             'retry_after' => $this->retryAfter,
             'blocked' => $this->blocked,
+            'backoff_seconds' => $this->backoffSeconds,
+            'next_allowed_at' => $this->nextAllowedAt,
         ];
     }
 }
