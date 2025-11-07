@@ -1,28 +1,92 @@
-name: CI
-on: [push, pull_request]
+name: 🚀 CI – Maatify Rate Limiter
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
 
 jobs:
   test:
+    name: 🧪 Run PHPUnit Tests
     runs-on: ubuntu-latest
+
+    services:
+      🧱 redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      🐬 mysql:
+        image: mysql:8.3
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: maatify_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -uroot -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      🍃 mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
-      - name: Checkout code
+      - name: 📦 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 🧩 Set up PHP
+      - name: ⚙️ Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: redis, mongodb, pdo_mysql
+          extensions: redis, pdo_mysql, mongodb
+          coverage: xdebug
+          tools: composer
 
-      - name: ⚙️ Install dependencies
-        run: composer install --no-progress --no-suggest
+      - name: 🩺 Verify Services Health
+        run: |
+          echo "🔍 Checking services health..."
+          redis-cli -h 127.0.0.1 ping
+          mysql -h 127.0.0.1 -uroot -proot -e "SHOW DATABASES;"
+          mongosh --eval "db.runCommand({ ping: 1 })"
 
-      - name: 🧪 Run PHPUnit
-        run: vendor/bin/phpunit --configuration phpunit.xml
+      - name: 📥 Install Composer Dependencies
+        run: |
+          composer install --prefer-dist --no-interaction --no-progress
+          composer dump-autoload -o
 
-      - name: 📄 Upload test results
+      - name: 🧾 Prepare .env Configuration
+        run: |
+          cp .env.example .env
+          echo "REDIS_HOST=127.0.0.1" >> .env
+          echo "REDIS_PORT=6379" >> .env
+          echo "MYSQL_DSN=mysql:host=127.0.0.1;dbname=maatify_test" >> .env
+          echo "MYSQL_USER=root" >> .env
+          echo "MYSQL_PASS=root" >> .env
+          echo "MONGO_URI=mongodb://127.0.0.1:27017" >> .env
+          echo "MONGO_DB=maatify_test" >> .env
+
+      - name: 🧪 Run PHPUnit Tests
+        run: |
+          echo "✅ Local test environment loaded."
+          vendor/bin/phpunit --configuration phpunit.xml --colors=always
+
+      - name: 📤 Upload Test Results (Optional)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: phpunit-results
+          name: 🧪 phpunit-results
           path: tests/_output/
