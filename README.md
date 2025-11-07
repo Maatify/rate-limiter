@@ -1,3 +1,12 @@
+![Maatify.dev](https://www.maatify.dev/assets/img/img/maatify_logo_white.svg)
+
+[![Build Status](https://github.com/maatify/rate-limiter/actions/workflows/ci.yml/badge.svg)](https://github.com/maatify/rate-limiter/actions/workflows/ci.yml)
+[![Current version](https://img.shields.io/packagist/v/maatify/rate-limiter)](https://packagist.org/packages/maatify/rate-limiter)
+[![Packagist PHP Version Support](https://img.shields.io/packagist/php-v/maatify/rate-limiter)](https://packagist.org/packages/maatify/rate-limiter)
+[![Monthly Downloads](https://img.shields.io/packagist/dm/maatify/rate-limiter)](https://packagist.org/packages/maatify/rate-limiter/stats)
+[![Total Downloads](https://img.shields.io/packagist/dt/maatify/rate-limiter)](https://packagist.org/packages/maatify/rate-limiter/stats)
+[![License](https://img.shields.io/github/license/maatify/rate-limiter)](https://github.com/maatify/rate-limiter/blob/main/LICENSE)
+
 # 🧩 **Maatify Rate Limiter**
 
 A PSR-compliant Rate Limiter library supporting Redis, MongoDB, and MySQL
@@ -14,7 +23,7 @@ A PSR-compliant Rate Limiter library supporting Redis, MongoDB, and MySQL
 * [x] Phase 3 – Storage Drivers
 * [x] Phase 3.1 – Enum Contracts Refactor
 * [x] Phase 4 – Resolver & Middleware
-
+* [x] Phase 4.1 – Continuous Integration (Docker + GitHub Actions)
 <!-- PHASE_STATUS_END -->
 
 ---
@@ -50,6 +59,7 @@ maatify-rate-limiter/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
+├── docker-compose.ci.yml
 ├── src/
 │   ├── Config/
 │   │   └── RateLimitConfig.php
@@ -85,58 +95,61 @@ maatify-rate-limiter/
 │       ├── README.phase2.md
 │       ├── README.phase3.md
 │       ├── README.phase3.1.md
-│       └── README.phase4.md
+│       ├── README.phase4.md
+│       └── README.phase4.1.md
 │
 ├── CHANGELOG.md
 ├── VERSION
 └── README.md
 ```
+---
+
+## 🧩 CI/CD Integration (Phase 4.1)
+
+🚀 **Phase 4.1 introduced full Continuous Integration support** via Docker Compose + GitHub Actions.
+
+* CI runs Redis, MySQL, and MongoDB containers in isolation.
+* PHPUnit runs inside Docker (`docker compose run --rm php`) with **live console output**.
+* Auto `.env` generation during pipeline.
+* Composer caching for faster re-runs.
+* Optional upload of test results (`tests/_output`).
+
+💡 CI Workflow File: `.github/workflows/ci.yml`
+💡 Docker Stack File: `docker-compose.ci.yml`
 
 ---
 
 ## 🧩 Current Version
 
 ```
-1.0.0-alpha-phase4
+1.0.0-alpha-phase4.1
 ```
 
 ---
 
+
 ## 🧾 CHANGELOG SUMMARY
 
-### Phase 1 – Environment Setup
+### Phase 4.1 – Continuous Integration (CI)
 
-* Composer initialized
-* PHPUnit and GitHub Actions setup
-* `.env.example` created for Redis, Mongo, MySQL
+* Added **Docker-based** CI with `docker-compose.ci.yml`.
+* Added GitHub Actions workflow `.github/workflows/ci.yml`.
+* Integrated **Redis 7**, **MySQL 8**, and **MongoDB 7** containers.
+* Enabled **live PHPUnit output** inside CI logs.
+* Automated `.env` creation and **Composer caching**.
+* Added artifact upload for test results.
+* Completed **full integration test environment**.
+---
+## ✅ Summary Table
 
-### Phase 2 – Core Architecture
-
-* Added `RateLimiterInterface`, `RateLimitStatusDTO`, `TooManyRequestsException`
-* Created enums `RateLimitActionEnum`, `PlatformEnum`
-* Added configuration file `RateLimitConfig`
-
-### Phase 3 – Storage Drivers
-
-* Added drivers:
-
-    * `RedisRateLimiter`
-    * `MongoRateLimiter`
-    * `MySQLRateLimiter`
-* Added unit tests for configuration
-
-### Phase 3.1 – Enum Contracts Refactor
-
-* Introduced `RateLimitActionInterface` and `PlatformInterface`
-* Updated enums to implement interfaces
-* Modified drivers & interface to accept interface-based enums
-* Greatly improved **reusability & flexibility**
-
-### Phase 4 – Resolver & Middleware
-
-* Added `RateLimiterResolver` (auto driver selection)
-* Added PSR-15 compliant `RateLimitHeadersMiddleware`
-* Added examples for **Slim**, **Laravel**, and **Custom Integration**
+| Environment           | Supported | Notes                       |
+|-----------------------|-----------|-----------------------------|
+| PHP (raw)             | ✅         | Works out of the box        |
+| Slim                  | ✅         | Fully PSR-15 compatible     |
+| Laravel               | ✅         | Custom middleware ready     |
+| Custom Enums          | ✅         | Through interface contracts |
+| Redis / Mongo / MySQL | ✅         | Switch easily via resolver  |
+| PSR Standards         | ✅         | PSR-7 / PSR-15 / PSR-12     |
 
 ---
 
@@ -378,25 +391,19 @@ composer require slim/slim
 
 ---
 
-## ✅ Summary Table
+## 🪪 License
 
-| Environment           | Supported | Notes                       |
-|-----------------------|-----------|-----------------------------|
-| PHP (raw)             | ✅         | Works out of the box        |
-| Slim                  | ✅         | Fully PSR-15 compatible     |
-| Laravel               | ✅         | Custom middleware ready     |
-| Custom Enums          | ✅         | Through interface contracts |
-| Redis / Mongo / MySQL | ✅         | Switch easily via resolver  |
-| PSR Standards         | ✅         | PSR-7 / PSR-15 / PSR-12     |
+**[MIT license](LICENSE)** © [Maatify.dev](https://www.maatify.dev)
+
+You’re free to use, modify, and distribute this library with attribution.
 
 ---
 
 ## 🧱 Authors & Credits
 
-**Developed by:** [Maatify.dev](https://www.maatify.dev)
+**Developed by:** **Maatify.dev**
+[https://www.Maatify.dev](https://www.Maatify.dev)
+
 **Maintainer:** Mohamed Abdulalim
-**License:** MIT
+
 **Project:** maatify:rate-limiter
-
----
-
