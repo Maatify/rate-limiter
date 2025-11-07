@@ -13,30 +13,35 @@ declare(strict_types=1);
 
 namespace Maatify\RateLimiter\Enums;
 
+use Maatify\RateLimiter\Contracts\PlatformInterface;
+
 /**
  * 🎯 Enum PlatformEnum
  *
  * 🧩 Purpose:
- * Defines supported platforms for applying rate-limiting rules.
- * Each case represents a distinct environment or client type where
- * rate limits can differ (e.g., `web` vs `api` vs `mobile`).
+ * Defines all supported **platform contexts** used in the Maatify rate-limiting system.
+ * Each enum case represents a unique environment or access channel
+ * where separate rate-limiting policies can apply (e.g., web vs API vs mobile).
+ *
+ * This enum implements {@see PlatformInterface} for cross-module compatibility,
+ * allowing dependency injection and type-safe platform handling across projects.
  *
  * ⚙️ Usage:
  * ```php
  * use Maatify\RateLimiter\Enums\PlatformEnum;
  *
- * $platform = PlatformEnum::API;
- * echo $platform->value; // "api"
+ * $platform = PlatformEnum::MOBILE;
+ * echo $platform->value; // "mobile"
  * ```
  *
- * ✅ Common use cases:
- * - Applying different rate limits per platform.
- * - Logging and analytics grouping.
- * - Segregating user behaviors in rate-limiter backends.
+ * ✅ Common scenarios:
+ * - Apply unique rate limits per platform.
+ * - Distinguish API vs web usage analytics.
+ * - Manage throttling by client type.
  *
  * @package Maatify\RateLimiter\Enums
  */
-enum PlatformEnum: string
+enum PlatformEnum: string implements PlatformInterface
 {
     /** 🌐 Standard web clients (e.g., browsers). */
     case WEB = 'web';
@@ -44,9 +49,28 @@ enum PlatformEnum: string
     /** 📱 Native mobile apps (iOS/Android). */
     case MOBILE = 'mobile';
 
-    /** ⚙️ API integrations or external services. */
+    /** ⚙️ Public or internal API integrations. */
     case API = 'api';
 
-    /** 🧑‍💼 Administrative dashboards or back-office tools. */
+    /** 🧑‍💼 Administrative dashboards or internal panels. */
     case ADMIN = 'admin';
+
+    /**
+     * 🧠 Retrieve the string value of the platform enum.
+     *
+     * 🎯 Provides an interface-compliant accessor that mirrors `$this->value`
+     * but ensures consistent behavior across enum and non-enum implementations.
+     *
+     * @return string The string identifier of the platform (e.g., "web", "api").
+     *
+     * ✅ Example:
+     * ```php
+     * echo PlatformEnum::WEB->value(); // "web"
+     * ```
+     */
+    public function value(): string
+    {
+        // 🔹 Returns the string value of the platform case
+        return $this->value;
+    }
 }

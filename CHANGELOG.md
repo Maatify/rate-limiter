@@ -15,3 +15,17 @@
 - Added RateLimitStatusDTO for structured responses
 - Added TooManyRequestsException
 - Added CoreStructureTest.php
+
+---
+## [1.0.0-alpha – Phase 3]
+- Implemented RedisRateLimiter
+- Implemented MongoRateLimiter
+- Implemented MySQLRateLimiter
+- Added test DriversTest.php
+
+---
+## [1.0.0-alpha – Phase 3.1]
+- Added RateLimitActionInterface and PlatformInterface contracts.
+- Updated RateLimitActionEnum and PlatformEnum to implement contracts.
+- Updated RateLimiterInterface and all drivers to use contracts instead of hard-coded enums.
+- Improved library reusability and Open/Closed design compliance.

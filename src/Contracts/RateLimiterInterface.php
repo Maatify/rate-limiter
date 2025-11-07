@@ -1,44 +1,51 @@
 <?php
-/**
- * Created by Maatify.dev
- * User: Maatify.dev
- * Date: 2025-11-07
- * Time: 00:00
- * Project: maatify/rate-limiter
- * IDE: PhpStorm
- * https://www.Maatify.dev
- */
-
 declare(strict_types=1);
 
 namespace Maatify\RateLimiter\Contracts;
 
 use Maatify\RateLimiter\DTO\RateLimitStatusDTO;
-use Maatify\RateLimiter\Enums\RateLimitActionEnum;
-use Maatify\RateLimiter\Enums\PlatformEnum;
 use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
 
 /**
  * 🎯 Interface RateLimiterInterface
  *
  * 🧩 Purpose:
- * Defines the contract for any Rate Limiter implementation (e.g., Redis-based, MySQL-based, or hybrid).
- * This interface ensures a consistent API for checking, resetting, and querying rate-limit states
- * across different platforms and actions.
+ * Defines the **core contract** for all rate limiter driver implementations
+ * (e.g., Redis, MongoDB, MySQL). Each driver enforces request limits
+ * for different actions and platforms while maintaining consistent API behavior.
+ *
+ * This interface allows any driver to interact seamlessly with
+ * {@see RateLimitActionInterface} and {@see PlatformInterface} instances.
  *
  * ⚙️ Responsibilities:
- * - Verify if an IP address has exceeded allowed request limits.
- * - Track and update rate-limit counters per action/platform.
- * - Reset rate-limit records when needed.
- * - Retrieve the current rate-limit status without side effects.
+ * - Control and track request attempts per unique key.
+ * - Reset or clear rate-limit counters.
+ * - Provide detailed status reports without altering state.
  *
- * ✅ Typical usage:
+ * ✅ Example Implementation:
  * ```php
  * use Maatify\RateLimiter\Contracts\RateLimiterInterface;
- * use Maatify\RateLimiter\Enums\RateLimitActionEnum;
- * use Maatify\RateLimiter\Enums\PlatformEnum;
+ * use Maatify\RateLimiter\Contracts\RateLimitActionInterface;
+ * use Maatify\RateLimiter\Contracts\PlatformInterface;
+ * use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
  *
- * $limiter->attempt('192.168.1.1', RateLimitActionEnum::LOGIN, PlatformEnum::WEB);
+ * final class RedisRateLimiter implements RateLimiterInterface
+ * {
+ *     public function attempt(string $key, RateLimitActionInterface $action, PlatformInterface $platform): RateLimitStatusDTO
+ *     {
+ *         // Implementation logic
+ *     }
+ *
+ *     public function reset(string $key, RateLimitActionInterface $action, PlatformInterface $platform): bool
+ *     {
+ *         // Reset logic
+ *     }
+ *
+ *     public function status(string $key, RateLimitActionInterface $action, PlatformInterface $platform): RateLimitStatusDTO
+ *     {
+ *         // Status logic
+ *     }
+ * }
  * ```
  *
  * @package Maatify\RateLimiter\Contracts
@@ -46,68 +53,69 @@ use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
 interface RateLimiterInterface
 {
     /**
-     * 🧠 Check and update rate limit for a given action/platform/IP.
+     * 🚀 Attempt to perform an action under rate limit rules.
      *
-     * 🎯 This method validates if the given IP has exceeded its request quota.
-     * If the limit is not reached, it increments the counter and returns the updated status.
-     * If the limit is exceeded, it throws a {@see TooManyRequestsException}.
+     * 🧠 This method checks whether a specific key (IP, user_id, token, etc.)
+     * is still allowed to perform the given action within the defined limits.
+     * It increments usage counters and throws {@see TooManyRequestsException}
+     * when the threshold is exceeded.
      *
-     * @param string $ip The client IP address.
-     * @param RateLimitActionEnum $action The rate-limited action (e.g., LOGIN, OTP_REQUEST).
-     * @param PlatformEnum $platform The target platform (e.g., WEB, API, MOBILE).
+     * @param string $key Unique identifier for the entity (e.g., IP, user_id, API key).
+     * @param RateLimitActionInterface $action The logical action being rate-limited.
+     * @param PlatformInterface $platform The execution context (e.g., web, api, admin).
      *
-     * @return RateLimitStatusDTO Contains current usage, remaining attempts, and next available time.
+     * @return RateLimitStatusDTO Contains the limit, remaining quota, and reset timing.
      *
-     * @throws TooManyRequestsException If the client has exceeded the allowed rate limit.
+     * @throws TooManyRequestsException When the limit is exceeded for this key.
      *
      * ✅ Example:
      * ```php
      * try {
-     *     $status = $limiter->attempt('127.0.0.1', RateLimitActionEnum::OTP_REQUEST, PlatformEnum::API);
-     *     echo $status->remainingAttempts;
+     *     $status = $rateLimiter->attempt('127.0.0.1', $action, $platform);
+     *     echo $status->remaining;
      * } catch (TooManyRequestsException $e) {
-     *     echo "Too many requests. Try again later.";
+     *     echo 'Too many requests!';
      * }
      * ```
      */
-    public function attempt(string $ip, RateLimitActionEnum $action, PlatformEnum $platform): RateLimitStatusDTO;
+    public function attempt(string $key, RateLimitActionInterface $action, PlatformInterface $platform): RateLimitStatusDTO;
 
     /**
-     * ♻️ Manually reset the rate limit for a specific key.
+     * ♻️ Reset the rate-limit record for a specific key and action.
      *
-     * 🧩 Useful when an admin, system job, or recovery action needs to clear
-     * a user’s IP-based rate-limit record before the automatic reset period.
+     * Removes or clears all stored usage counters, effectively allowing
+     * the key to start fresh as if it had made no previous requests.
      *
-     * @param string $ip The client IP address.
-     * @param RateLimitActionEnum $action The action to reset (e.g., LOGIN, PASSWORD_RESET).
-     * @param PlatformEnum $platform The platform context.
+     * @param string $key The unique identifier (IP, user_id, token, etc.).
+     * @param RateLimitActionInterface $action The logical action to reset.
+     * @param PlatformInterface $platform The associated platform or environment.
      *
-     * @return bool True if reset was successful, false otherwise.
+     * @return bool True if reset succeeded, false otherwise.
      *
      * ✅ Example:
      * ```php
-     * $limiter->reset('192.168.1.10', RateLimitActionEnum::LOGIN, PlatformEnum::WEB);
+     * $rateLimiter->reset('192.168.1.1', $action, $platform);
      * ```
      */
-    public function reset(string $ip, RateLimitActionEnum $action, PlatformEnum $platform): bool;
+    public function reset(string $key, RateLimitActionInterface $action, PlatformInterface $platform): bool;
 
     /**
-     * 🔍 Get the current status without incrementing counters.
+     * 🔍 Retrieve the current rate-limit status without modifying counters.
      *
-     * 🧠 Use this method to inspect current rate-limit status safely —
-     * e.g., in dashboards or monitoring tools — without affecting limits.
+     * Provides an immutable snapshot of the rate-limit state for
+     * monitoring, diagnostics, or user notifications.
      *
-     * @param string $ip The client IP address.
-     * @param RateLimitActionEnum $action The target rate-limit action.
-     * @param PlatformEnum $platform The target platform.
+     * @param string $key The unique identifier (IP, user_id, token, etc.).
+     * @param RateLimitActionInterface $action The logical action being queried.
+     * @param PlatformInterface $platform The execution context.
      *
-     * @return RateLimitStatusDTO Snapshot of current rate-limit information.
+     * @return RateLimitStatusDTO Snapshot of current rate-limit values.
      *
      * ✅ Example:
      * ```php
-     * $status = $limiter->status('127.0.0.1', RateLimitActionEnum::LOGIN, PlatformEnum::WEB);
-     * echo $status->remainingAttempts;
+     * $status = $rateLimiter->status('127.0.0.1', $action, $platform);
+     * echo $status->remaining . " requests left.";
      * ```
      */
-    public function status(string $ip, RateLimitActionEnum $action, PlatformEnum $platform): RateLimitStatusDTO;
+    public function status(string $key, RateLimitActionInterface $action, PlatformInterface $platform): RateLimitStatusDTO;
 }

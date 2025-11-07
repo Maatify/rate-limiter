@@ -13,13 +13,18 @@ declare(strict_types=1);
 
 namespace Maatify\RateLimiter\Enums;
 
+use Maatify\RateLimiter\Contracts\RateLimitActionInterface;
+
 /**
  * 🎯 Enum RateLimitActionEnum
  *
  * 🧩 Purpose:
- * Defines standardized rate-limited actions within the system.
- * Each enum case represents a specific user or system operation
- * that should be subject to rate control to prevent abuse.
+ * Provides a strongly typed enumeration of rate-limited actions across the system.
+ * Each case represents a distinct action (e.g., login, OTP request) that can be
+ * individually configured and controlled through the rate limiter.
+ *
+ * This enum also implements {@see RateLimitActionInterface} for compatibility
+ * with type-hinted method signatures and dependency injection across Maatify components.
  *
  * ⚙️ Usage:
  * ```php
@@ -29,14 +34,14 @@ namespace Maatify\RateLimiter\Enums;
  * echo $action->value; // "login"
  * ```
  *
- * ✅ Common use cases:
- * - Rate-limiting authentication attempts (e.g., login, register).
- * - Controlling OTP or password-reset requests.
- * - Managing general API request frequency.
+ * ✅ Typical use cases:
+ * - Authentication and signup rate control.
+ * - Throttling OTP or password reset attempts.
+ * - General API request throttling.
  *
  * @package Maatify\RateLimiter\Enums
  */
-enum RateLimitActionEnum: string
+enum RateLimitActionEnum: string implements RateLimitActionInterface
 {
     /** 🔐 User login attempts. */
     case LOGIN = 'login';
@@ -52,4 +57,24 @@ enum RateLimitActionEnum: string
 
     /** ⚙️ General API call rate-limiting. */
     case API_CALL = 'api_call';
+
+    /**
+     * 🧠 Retrieve the string value of the enum case.
+     *
+     * 🎯 This helper method provides an explicit interface-compliant
+     * way to retrieve the action value, maintaining backward compatibility
+     * with non-enum implementations that expect a `value()` method.
+     *
+     * @return string The string value of the rate-limit action.
+     *
+     * ✅ Example:
+     * ```php
+     * echo RateLimitActionEnum::REGISTER->value(); // "register"
+     * ```
+     */
+    public function value(): string
+    {
+        // 🔹 Returns the internal enum value (same as ->value property)
+        return $this->value;
+    }
 }
