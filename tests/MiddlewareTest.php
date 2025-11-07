@@ -51,7 +51,15 @@ final class MiddlewareTest extends TestCase
      */
     public function testResolverCreatesRedisDriver(): void
     {
-        $resolver = new RateLimiterResolver(['driver' => 'redis']);
+        $redisHost = getenv('REDIS_HOST') ?: ($_ENV['REDIS_HOST'] ?? '127.0.0.1');
+        $redisPort = getenv('REDIS_PORT') ?: ($_ENV['REDIS_PORT'] ?? '6379');
+
+        $resolver = new RateLimiterResolver(
+            ['driver' => 'redis',
+                 'redis_host' => $redisHost,
+                 'redis_port' => $redisPort,
+
+             ]);
         $driver = $resolver->resolve();
 
         $this->assertInstanceOf(
