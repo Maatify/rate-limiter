@@ -58,6 +58,9 @@ jobs:
 
       - name: 🩺 Verify Services Health
         run: |
+          echo "🔍 Installing client tools for service health checks..."
+          sudo apt-get update -qq
+          sudo apt-get install -y redis-tools mongodb-clients > /dev/null
           echo "🔍 Checking services health..."
           redis-cli -h 127.0.0.1 ping
           mysql -h 127.0.0.1 -uroot -proot -e "SHOW DATABASES;"
