@@ -29,3 +29,10 @@
 - Updated RateLimitActionEnum and PlatformEnum to implement contracts.
 - Updated RateLimiterInterface and all drivers to use contracts instead of hard-coded enums.
 - Improved library reusability and Open/Closed design compliance.
+
+---
+## [1.0.0-alpha – Phase 4]
+- Added RateLimiterResolver for dynamic driver selection.
+- Added RateLimitHeadersMiddleware compatible with PSR-15 (Slim / Laravel).
+- Integrated retry-after headers and rate status headers.
+- Added MiddlewareTest to validate resolution and header injection.
