@@ -63,7 +63,11 @@ jobs:
         run: |
           echo "🔍 Installing client tools for service health checks..."
           sudo apt-get update -qq
-          sudo apt-get install -y redis-tools mongodb-tools > /dev/null
+          sudo apt-get install -y redis-tools mysql-client curl gnupg > /dev/null
+          curl -fsSL https://pgp.mongodb.com/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+          echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+          sudo apt-get update -qq
+          sudo apt-get install -y mongodb-mongosh > /dev/null
           echo "🔍 Checking services health..."
           redis-cli -h 127.0.0.1 ping
           mysql -h 127.0.0.1 -uroot -proot -e "SHOW DATABASES;"
