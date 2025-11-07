@@ -71,7 +71,7 @@ jobs:
 
           echo "⏳ Waiting for Redis to be ready..."
           for i in {1..10}; do
-            if redis-cli -h 127.0.0.1 ping > /dev/null 2>&1; then
+            if redis-cli -h redis ping > /dev/null 2>&1; then
               echo "✅ Redis is ready!"
               break
             fi
@@ -81,7 +81,7 @@ jobs:
 
           echo "⏳ Waiting for MySQL to be ready..."
           for i in {1..10}; do
-            if mysqladmin ping -h 127.0.0.1 -uroot -proot > /dev/null 2>&1; then
+            if mysqladmin ping -h mysql -uroot -proot > /dev/null 2>&1; then
               echo "✅ MySQL is ready!"
               break
             fi
@@ -91,7 +91,7 @@ jobs:
 
           echo "⏳ Waiting for MongoDB to be ready..."
           for i in {1..10}; do
-            if mongosh --eval "db.runCommand({ ping: 1 })" --quiet | grep -q '"ok" : 1'; then
+            if mongosh "mongodb://mongo:27017" --eval "db.runCommand({ ping: 1 })" --quiet | grep -q '"ok" : 1'; then
               echo "✅ MongoDB is ready!"
               break
             fi
@@ -100,6 +100,7 @@ jobs:
           done
 
           echo "🟢 All services are healthy and ready to use!"
+      
       
 
       - name: 📥 Install Composer Dependencies
