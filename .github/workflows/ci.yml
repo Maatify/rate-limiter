@@ -26,16 +26,16 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: maatify_test
+          MYSQL_USER: maatify
+          MYSQL_PASSWORD: maatify
         ports:
           - 3306:3306
         options: >-
-          --default-authentication-plugin=mysql_native_password
-          --character-set-server=utf8mb4
-          --collation-server=utf8mb4_general_ci
-          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+          --health-cmd "mysqladmin ping -h localhost -uroot -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
 
       mongo:
         image: mongo:7
