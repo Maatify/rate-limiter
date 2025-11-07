@@ -118,7 +118,7 @@ jobs:
           echo "MYSQL_DSN=mysql:host=127.0.0.1;dbname=maatify_test" >> .env
           echo "MYSQL_USER=root" >> .env
           echo "MYSQL_PASS=root" >> .env
-          echo "MONGO_URI=mongodb://127.0.0.1:27017" >> .env
+          echo "MONGO_URI=mongodb://mongo:27017" >> .env
           echo "MONGO_DB=maatify_test" >> .env
 
       - name: 🧪 Run PHPUnit Tests
