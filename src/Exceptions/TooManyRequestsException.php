@@ -41,6 +41,7 @@ final class TooManyRequestsException extends Exception
      * @param string                 $message Custom error message
      * @param int                    $code    HTTP error code (default: 429)
      * @param RateLimitStatusDTO|null $status Optional DTO carrying metadata
+     * @note Custom constructor extends base Exception to include RateLimitStatusDTO metadata.
      */
     public function __construct(
         string $message = 'Too many requests',
