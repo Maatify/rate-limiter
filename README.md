@@ -1,12 +1,20 @@
 ![Maatify.dev](https://www.maatify.dev/assets/img/img/maatify_logo_white.svg)
 
-[![Build Status](https://github.com/maatify/rate-limiter/actions/workflows/ci.yml/badge.svg)](https://github.com/maatify/rate-limiter/actions/workflows/ci.yml)
-[![Current version](https://img.shields.io/packagist/v/maatify/rate-limiter)](https://packagist.org/packages/maatify/rate-limiter)
-[![Packagist PHP Version Support](https://img.shields.io/packagist/php-v/maatify/rate-limiter)](https://packagist.org/packages/maatify/rate-limiter)
-[![Monthly Downloads](https://img.shields.io/packagist/dm/maatify/rate-limiter)](https://packagist.org/packages/maatify/rate-limiter/stats)
-[![Total Downloads](https://img.shields.io/packagist/dt/maatify/rate-limiter)](https://packagist.org/packages/maatify/rate-limiter/stats)
-[![License](https://img.shields.io/github/license/maatify/rate-limiter)](https://github.com/maatify/rate-limiter/blob/main/LICENSE)
+---
+
+# 📦 maatify/rate-limiter
+
+[![Version](https://img.shields.io/packagist/v/maatify/rate-limiter?label=Version&color=4C1)](https://packagist.org/packages/maatify/rate-limiter)
+[![PHP](https://img.shields.io/packagist/php-v/maatify/rate-limiter?label=PHP&color=777BB3)](https://packagist.org/packages/maatify/rate-limiter)
+[![Build](https://github.com/Maatify/rate-limiter/actions/workflows/ci.yml/badge.svg?label=Build&color=brightgreen)](https://github.com/Maatify/rate-limiter/actions/workflows/ci.yml)
+[![Monthly Downloads](https://img.shields.io/packagist/dm/maatify/rate-limiter?label=Monthly%20Downloads&color=00A8E8)](https://packagist.org/packages/maatify/rate-limiter)
+[![Total Downloads](https://img.shields.io/packagist/dt/maatify/rate-limiter?label=Total%20Downloads&color=2AA)](https://packagist.org/packages/maatify/rate-limiter)
+[![Stars](https://img.shields.io/github/stars/Maatify/rate-limiter?label=Stars&color=FFD43B)](https://github.com/Maatify/rate-limiter/stargazers)
+[![License](https://img.shields.io/github/license/Maatify/rate-limiter?label=License&color=blueviolet)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Stable-success?style=flat-square)]()
 [![Code Quality](https://img.shields.io/codefactor/grade/github/Maatify/rate-limiter/main)](https://www.codefactor.io/repository/github/Maatify/rate-limiter)
+
+---
 
 # 🧩 **Maatify Rate Limiter**
 
