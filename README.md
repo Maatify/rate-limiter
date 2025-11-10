@@ -6,6 +6,7 @@
 [![Monthly Downloads](https://img.shields.io/packagist/dm/maatify/rate-limiter)](https://packagist.org/packages/maatify/rate-limiter/stats)
 [![Total Downloads](https://img.shields.io/packagist/dt/maatify/rate-limiter)](https://packagist.org/packages/maatify/rate-limiter/stats)
 [![License](https://img.shields.io/github/license/maatify/rate-limiter)](https://github.com/maatify/rate-limiter/blob/main/LICENSE)
+[![Code Quality](https://img.shields.io/codefactor/grade/github/Maatify/rate-limiter/main)](https://www.codefactor.io/repository/github/Maatify/rate-limiter)
 
 # 🧩 **Maatify Rate Limiter**
 
