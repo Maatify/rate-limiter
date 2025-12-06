@@ -113,8 +113,8 @@ final class MongoRateLimiter implements RateLimiterInterface
         );
 
         // 📊 Retrieve current record
-        $record = $this->collection->findOne(['_id' => $docKey]);
-        $count = $record['count'] ?? 1;
+        $record = (array)$this->collection->findOne(['_id' => $docKey]);
+        $count = (int) ($record['count'] ?? 1);
 
         // 🚫 Throw if limit exceeded
         if ($count > $config['limit']) {
@@ -180,83 +180,14 @@ final class MongoRateLimiter implements RateLimiterInterface
         // 🔹 Retrieve current configuration and document
         $config = RateLimitConfig::get($action->value());
         $docId = "{$platform->value()}_{$action->value()}_{$key}";
-        $record = $this->collection->findOne(['_id' => $docId]);
-        $count = $record['count'] ?? 0;
+        $record = (array)$this->collection->findOne(['_id' => $docId]);
+        $count = (int) ($record['count'] ?? 0);
 
         // 🧠 Return structured status object
         return new RateLimitStatusDTO(
             limit: $config['limit'],
             remaining: $config['limit'] - $count,
             resetAfter: $config['interval']
-        );
-    }
-
-    /**
-     * ⚙️ Calculate exponential backoff duration.
-     *
-     * 🧠 This method computes the delay time (in seconds) before the next
-     * allowed attempt using exponential growth logic.
-     *
-     * @param int $attempts Number of failed or consecutive attempts.
-     * @param int $base Base multiplier for the backoff (default 2).
-     * @param int $max Maximum allowed backoff time (in seconds).
-     *
-     * @return int Calculated backoff duration in seconds.
-     *
-     * ✅ Example:
-     * ```php
-     * $delay = $this->calculateBackoff(3); // 8 seconds
-     * ```
-     */
-    private function calculateBackoff(int $attempts, int $base = 2, int $max = 3600): int
-    {
-        return min(pow($base, $attempts), $max);
-    }
-
-    /**
-     * 🔒 Apply exponential backoff and update MongoDB state.
-     *
-     * Stores the calculated backoff duration and next allowed attempt time
-     * in the MongoDB record for analytical or enforcement use.
-     *
-     * @param string $key Unique key (e.g., IP, user_id, token).
-     * @param int $attempts Current number of failed or blocked attempts.
-     *
-     * @return RateLimitStatusDTO DTO describing the applied backoff status.
-     *
-     * ✅ Example:
-     * ```php
-     * $dto = $this->applyBackoff('user123', 3);
-     * echo $dto->nextAllowedAt;
-     * ```
-     */
-    private function applyBackoff(string $key, int $attempts): RateLimitStatusDTO
-    {
-        // ⏱️ Calculate next backoff window
-        $backoff = $this->calculateBackoff($attempts);
-        $nextAllowed = (new \DateTimeImmutable("+{$backoff} seconds"))->format('Y-m-d H:i:s');
-
-        // 🧾 Update Mongo document with new blocked_until and backoff metadata
-        $this->collection->updateOne(
-            ['_id' => $key],
-            [
-                '$set' => [
-                    'blocked_until' => new \MongoDB\BSON\UTCDateTime(strtotime($nextAllowed) * 1000),
-                    'backoff_seconds' => $backoff,
-                ]
-            ],
-            ['upsert' => true]
-        );
-
-        // 📦 Return a structured DTO describing the applied backoff
-        return new RateLimitStatusDTO(
-            limit: 0,
-            remaining: 0,
-            resetAfter: $backoff,
-            retryAfter: $backoff,
-            blocked: true,
-            backoffSeconds: $backoff,
-            nextAllowedAt: $nextAllowed
         );
     }
 }

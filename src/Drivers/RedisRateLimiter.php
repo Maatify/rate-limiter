@@ -177,7 +177,11 @@ final class RedisRateLimiter implements RateLimiterInterface
         $config = RateLimitConfig::get($action->value());
         $docKey = $this->key($key, $action, $platform);
 
-        $count = (int) $this->redis->get($docKey);
+        $value = $this->redis->get($docKey);
+        // Cast to string first to handle possible mixed type from stub, then int.
+        // Redis::get returns string|false. (int)false is 0. (int)string is parsed.
+        $count = (int) ((string) $value);
+
         $ttl = (int) $this->redis->ttl($docKey);
         $remaining = max(0, $config['limit'] - $count);
 

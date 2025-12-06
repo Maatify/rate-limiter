@@ -43,8 +43,10 @@ final class RateLimitWebMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        session_start();
-        $ip = $request->getServerParams()['REMOTE_ADDR'] ?? 'unknown';
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $ip = (string) ($request->getServerParams()['REMOTE_ADDR'] ?? 'unknown');
 
         try {
             $this->limiter->attempt($ip, $this->action, $this->platform);
@@ -53,7 +55,7 @@ final class RateLimitWebMiddleware implements MiddlewareInterface
             $status = $e->status;
 
             $_SESSION['rate_limit_error'] = [
-                'retry_after' => $status->retryAfter ?? 5,
+                'retry_after' => $status?->retryAfter ?? 5,
                 'action'      => $this->action->value,
                 'timestamp'   => time(),
             ];

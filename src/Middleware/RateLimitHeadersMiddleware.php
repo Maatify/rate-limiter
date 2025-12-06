@@ -93,9 +93,16 @@ final class RateLimitHeadersMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         // 🔍 Determine unique client key (from header or fallback to IP)
-        $key = $request->getHeaderLine($this->keyHeader)
-            ?: $request->getServerParams()['REMOTE_ADDR']
-               ?? 'unknown';
+        $key = 'unknown';
+        if ($this->keyHeader !== null) {
+            $key = $request->getHeaderLine($this->keyHeader);
+        }
+
+        if ($key === '' || $key === 'unknown') {
+            $key = $request->getServerParams()['REMOTE_ADDR'] ?? 'unknown';
+        }
+
+        $key = (string) $key;
 
         try {
             // 🧩 Attempt the rate-limited operation
@@ -103,10 +110,12 @@ final class RateLimitHeadersMiddleware implements MiddlewareInterface
         } catch (TooManyRequestsException $e) {
             // 🚫 Over the limit → respond with 429 and relevant headers
             $response = $handler->handle($request);
+            $status = $e->status;
+
             return $response
                 ->withStatus(429)
-                ->withHeader('Retry-After', (string)($status->retryAfter ?? 60))
-                ->withHeader('X-RateLimit-Limit', (string)($status->limit ?? ''))
+                ->withHeader('Retry-After', (string)($status?->retryAfter ?? 60))
+                ->withHeader('X-RateLimit-Limit', (string)($status?->limit ?? ''))
                 ->withHeader('X-RateLimit-Remaining', '0');
         }
 

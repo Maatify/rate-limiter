@@ -12,6 +12,7 @@
 
 declare(strict_types=1);
 
+use Maatify\RateLimiter\DTO\RateLimitStatusDTO;
 use PHPUnit\Framework\TestCase;
 use Maatify\RateLimiter\Resolver\RateLimiterResolver;
 
@@ -103,6 +104,7 @@ final class BackoffTest extends TestCase
         $limiter = $resolver->resolve();
 
         // 🧠 Invoke private method `applyBackoff()` to obtain DTO
+        /** @var RateLimitStatusDTO $dto */
         $dto = (new ReflectionMethod($limiter, 'applyBackoff'))
             ->invoke($limiter, 'rate:test', 3);
 
@@ -110,7 +112,7 @@ final class BackoffTest extends TestCase
         $this->assertNotEmpty($dto->nextAllowedAt, 'Expected non-empty nextAllowedAt timestamp.');
         $this->assertMatchesRegularExpression(
             '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/',
-            $dto->nextAllowedAt,
+            (string)$dto->nextAllowedAt,
             'Expected nextAllowedAt in Y-m-d H:i:s format.'
         );
     }

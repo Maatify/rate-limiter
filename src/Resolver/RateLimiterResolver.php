@@ -56,7 +56,7 @@ final class RateLimiterResolver
     /**
      * 🧠 Constructor
      *
-     * @param array $config Configuration array used to determine and connect
+     * @param array<string, mixed> $config Configuration array used to determine and connect
      *                      to the appropriate backend driver.
      *
      * Example config keys:
@@ -100,7 +100,7 @@ final class RateLimiterResolver
      */
     public function resolve(): RateLimiterInterface
     {
-        $driver = strtolower($this->config['driver'] ?? 'redis');
+        $driver = strtolower((string)($this->config['driver'] ?? 'redis'));
 
         return match ($driver) {
             'redis' => new RedisRateLimiter($this->redis()),
@@ -127,12 +127,12 @@ final class RateLimiterResolver
     {
         $redis = new Redis();
         $redis->connect(
-            $this->config['redis_host'] ?? '127.0.0.1',
+            (string)($this->config['redis_host'] ?? '127.0.0.1'),
             (int)($this->config['redis_port'] ?? 6379)
         );
 
         if (!empty($this->config['redis_password'])) {
-            $redis->auth($this->config['redis_password']);
+            $redis->auth((string)$this->config['redis_password']);
         }
 
         return $redis;
@@ -153,10 +153,10 @@ final class RateLimiterResolver
      */
     private function mongo(): \MongoDB\Collection
     {
-        $client = new MongoClient($this->config['mongo_uri'] ?? 'mongodb://127.0.0.1:27017');
+        $client = new MongoClient((string)($this->config['mongo_uri'] ?? 'mongodb://127.0.0.1:27017'));
         return $client->selectCollection(
-            $this->config['mongo_db'] ?? 'rate_limiter',
-            $this->config['mongo_collection'] ?? 'limits'
+            (string)($this->config['mongo_db'] ?? 'rate_limiter'),
+            (string)($this->config['mongo_collection'] ?? 'limits')
         );
     }
 
@@ -176,9 +176,9 @@ final class RateLimiterResolver
     private function pdo(): PDO
     {
         return new PDO(
-            $this->config['mysql_dsn'] ?? 'mysql:host=127.0.0.1;dbname=rate_limiter',
-            $this->config['mysql_user'] ?? 'root',
-            $this->config['mysql_pass'] ?? ''
+            (string)($this->config['mysql_dsn'] ?? 'mysql:host=127.0.0.1;dbname=rate_limiter'),
+            (string)($this->config['mysql_user'] ?? 'root'),
+            (string)($this->config['mysql_pass'] ?? '')
         );
     }
 }
