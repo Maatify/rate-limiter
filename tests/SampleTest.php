@@ -41,6 +41,6 @@ final class SampleTest extends TestCase
     public function testInitialSetup(): void
     {
         // 🎯 Simple assertion to confirm test environment readiness
-        $this->assertTrue(1 === 1, 'Environment setup is working correctly.');
+        $this->expectNotToPerformAssertions();
     }
 }

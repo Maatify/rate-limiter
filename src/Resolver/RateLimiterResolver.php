@@ -100,7 +100,7 @@ final class RateLimiterResolver
      */
     public function resolve(): RateLimiterInterface
     {
-        $driver = strtolower((string)($this->config['driver'] ?? 'redis'));
+        $driver = strtolower($this->getStringConfig('driver', 'redis'));
 
         return match ($driver) {
             'redis' => new RedisRateLimiter($this->redis()),
@@ -127,12 +127,13 @@ final class RateLimiterResolver
     {
         $redis = new Redis();
         $redis->connect(
-            (string)($this->config['redis_host'] ?? '127.0.0.1'),
-            (int)($this->config['redis_port'] ?? 6379)
+            $this->getStringConfig('redis_host', '127.0.0.1'),
+            $this->getIntConfig('redis_port', 6379)
         );
 
-        if (!empty($this->config['redis_password'])) {
-            $redis->auth((string)$this->config['redis_password']);
+        $password = $this->getStringConfig('redis_password', '');
+        if (!empty($password)) {
+            $redis->auth($password);
         }
 
         return $redis;
@@ -153,10 +154,10 @@ final class RateLimiterResolver
      */
     private function mongo(): \MongoDB\Collection
     {
-        $client = new MongoClient((string)($this->config['mongo_uri'] ?? 'mongodb://127.0.0.1:27017'));
+        $client = new MongoClient($this->getStringConfig('mongo_uri', 'mongodb://127.0.0.1:27017'));
         return $client->selectCollection(
-            (string)($this->config['mongo_db'] ?? 'rate_limiter'),
-            (string)($this->config['mongo_collection'] ?? 'limits')
+            $this->getStringConfig('mongo_db', 'rate_limiter'),
+            $this->getStringConfig('mongo_collection', 'limits')
         );
     }
 
@@ -176,9 +177,30 @@ final class RateLimiterResolver
     private function pdo(): PDO
     {
         return new PDO(
-            (string)($this->config['mysql_dsn'] ?? 'mysql:host=127.0.0.1;dbname=rate_limiter'),
-            (string)($this->config['mysql_user'] ?? 'root'),
-            (string)($this->config['mysql_pass'] ?? '')
+            $this->getStringConfig('mysql_dsn', 'mysql:host=127.0.0.1;dbname=rate_limiter'),
+            $this->getStringConfig('mysql_user', 'root'),
+            $this->getStringConfig('mysql_pass', '')
         );
+    }
+
+    private function getStringConfig(string $key, string $default): string
+    {
+        if (isset($this->config[$key]) && is_string($this->config[$key])) {
+            return $this->config[$key];
+        }
+        return $default;
+    }
+
+    private function getIntConfig(string $key, int $default): int
+    {
+        if (isset($this->config[$key])) {
+            if (is_int($this->config[$key])) {
+                return $this->config[$key];
+            }
+            if (is_numeric($this->config[$key])) {
+                return (int) $this->config[$key];
+            }
+        }
+        return $default;
     }
 }

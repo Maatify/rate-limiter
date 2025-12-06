@@ -99,10 +99,14 @@ final class RateLimitHeadersMiddleware implements MiddlewareInterface
         }
 
         if ($key === '' || $key === 'unknown') {
-            $key = $request->getServerParams()['REMOTE_ADDR'] ?? 'unknown';
+            $val = $request->getServerParams()['REMOTE_ADDR'] ?? 'unknown';
+            $key = is_string($val) ? $val : 'unknown';
         }
 
-        $key = (string) $key;
+        // Ensure key is string
+        if (!is_string($key)) {
+            $key = 'unknown';
+        }
 
         try {
             // 🧩 Attempt the rate-limited operation
@@ -112,10 +116,14 @@ final class RateLimitHeadersMiddleware implements MiddlewareInterface
             $response = $handler->handle($request);
             $status = $e->status;
 
+            // Handle potentially null status safely
+            $retryAfter = $status ? $status->retryAfter : 60;
+            $limit = $status ? $status->limit : '';
+
             return $response
                 ->withStatus(429)
-                ->withHeader('Retry-After', (string)($status?->retryAfter ?? 60))
-                ->withHeader('X-RateLimit-Limit', (string)($status?->limit ?? ''))
+                ->withHeader('Retry-After', (string)$retryAfter)
+                ->withHeader('X-RateLimit-Limit', (string)$limit)
                 ->withHeader('X-RateLimit-Remaining', '0');
         }
 
