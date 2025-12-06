@@ -103,11 +103,6 @@ final class RateLimitHeadersMiddleware implements MiddlewareInterface
             $key = is_string($val) ? $val : 'unknown';
         }
 
-        // Ensure key is string
-        if (!is_string($key)) {
-            $key = 'unknown';
-        }
-
         try {
             // 🧩 Attempt the rate-limited operation
             $status = $this->limiter->attempt($key, $this->action, $this->platform);
