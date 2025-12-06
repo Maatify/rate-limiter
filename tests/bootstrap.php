@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Maatify.dev
  * User: Maatify.dev
@@ -12,6 +13,7 @@
 declare(strict_types=1);
 
 use Dotenv\Dotenv;
+use Maatify\Bootstrap\Core\EnvironmentLoader;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -38,19 +40,49 @@ $envPath = dirname(__DIR__);
  * - Displays the detected `APP_ENV` variable.
  */
 
-// 👇 Load `.env.local` first (highest priority), then fallbacks
-if (file_exists($envPath . '/.env.local')) {
-    Dotenv::createImmutable($envPath, '.env.local')->load();
-    echo "✅ Loaded .env.local (private environment)\n";
-} elseif (file_exists($envPath . '/.env.testing')) {
-    Dotenv::createImmutable($envPath, '.env.testing')->load();
-    echo "✅ Loaded .env.testing\n";
-} elseif (file_exists($envPath . '/.env.example')) {
-    Dotenv::createImmutable($envPath, '.env.example')->load();
-    echo "✅ Loaded .env.example (fallback)\n";
-} else {
-    echo "⚠️ No environment file found.\n";
+
+// ------------------------------------------------------------
+// 1) Load composer autoload
+// ------------------------------------------------------------
+$autoload = dirname(__DIR__) . '/vendor/autoload.php';
+
+if (! file_exists($autoload)) {
+    fwrite(STDERR, "❌ Autoload not found: $autoload" . PHP_EOL);
+    exit(1);
 }
 
-// 🧪 Display active environment for debugging
-echo "🧪 Environment: " . ($_ENV['APP_ENV'] ?? 'unknown') . "\n";
+require_once $autoload;
+
+
+// ------------------------------------------------------------
+// 2) Load environment variables (testing/default)
+// ------------------------------------------------------------
+$loader = new EnvironmentLoader(dirname(__DIR__));
+$loader->load();
+
+// ------------------------------------------------------------
+// 3) Normalize environment value for PHPStan level=max
+// ------------------------------------------------------------
+$envRaw = $_ENV['APP_ENV'] ?? 'unknown';
+
+/*
+ * PHPStan Safe Normalization
+ * mixed → string (safe)
+ */
+$envString = is_scalar($envRaw)
+    ? (string) $envRaw
+    : 'unknown';
+
+// ------------------------------------------------------------
+// 4) Display current environment (deterministic, safe)
+// ------------------------------------------------------------
+echo '🧪 Environment: ' . $envString . PHP_EOL;
+
+// ------------------------------------------------------------
+// 5) Optional: Disable output buffering for CI
+// ------------------------------------------------------------
+if (function_exists('ini_set')) {
+    ini_set('output_buffering', 'off');
+    ini_set('implicit_flush', '1');
+}
+

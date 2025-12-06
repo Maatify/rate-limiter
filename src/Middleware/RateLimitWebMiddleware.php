@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Maatify.dev
  * User: Maatify.dev
@@ -37,7 +38,8 @@ final class RateLimitWebMiddleware implements MiddlewareInterface
         private readonly RateLimiterInterface $limiter,
         private readonly RateLimitActionEnum $action,
         private readonly PlatformEnum $platform
-    ) {}
+    ) {
+    }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {

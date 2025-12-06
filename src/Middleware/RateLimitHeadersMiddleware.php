@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Maatify.dev
  * User: Maatify.dev
@@ -72,7 +73,8 @@ final class RateLimitHeadersMiddleware implements MiddlewareInterface
         private readonly RateLimitActionInterface $action,
         private readonly PlatformInterface $platform,
         private readonly ?string $keyHeader = 'X-Client-IP'
-    ) {}
+    ) {
+    }
 
     /**
      * 🚦 Process the incoming request through the rate limiter.

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Maatify.dev
  * User: Maatify.dev
@@ -13,9 +14,6 @@ declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
 use Maatify\RateLimiter\Resolver\RateLimiterResolver;
-use Maatify\RateLimiter\Enums\RateLimitActionEnum;
-use Maatify\RateLimiter\Enums\PlatformEnum;
-use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
 
 /**
  * 🧩 Class BackoffTest

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Maatify.dev
  * User: Maatify.dev
@@ -76,7 +77,8 @@ final class RateLimiterResolver
      */
     public function __construct(
         private readonly array $config
-    ) {}
+    ) {
+    }
 
     /**
      * 🎯 Resolve the appropriate RateLimiter driver.

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Maatify.dev
  * User: Maatify.dev
@@ -117,7 +118,7 @@ final class MongoRateLimiter implements RateLimiterInterface
 
         // 🚫 Throw if limit exceeded
         if ($count > $config['limit']) {
-            throw new TooManyRequestsException("Rate limit exceeded", 429);
+            throw new TooManyRequestsException('Rate limit exceeded', 429);
         }
 
         // ✅ Return updated status as DTO

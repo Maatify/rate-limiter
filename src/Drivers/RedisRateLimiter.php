@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Maatify.dev
  * User: Maatify.dev
@@ -61,7 +62,9 @@ final class RedisRateLimiter implements RateLimiterInterface
      *
      * @param Redis $redis A connected Redis client instance.
      */
-    public function __construct(private readonly Redis $redis) {}
+    public function __construct(private readonly Redis $redis)
+    {
+    }
 
     /**
      * 🔹 Build a Redis key for a specific key/action/platform combination.
@@ -80,7 +83,7 @@ final class RedisRateLimiter implements RateLimiterInterface
      */
     private function key(string $key, RateLimitActionInterface $action, PlatformInterface $platform): string
     {
-        return sprintf("rate:%s:%s:%s", $platform->value(), $action->value(), $key);
+        return sprintf('rate:%s:%s:%s', $platform->value(), $action->value(), $key);
     }
 
     /**

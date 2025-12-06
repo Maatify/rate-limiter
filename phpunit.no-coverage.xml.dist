@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         executionOrder="depends,defects"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+         cacheDirectory=".phpunit.cache">
+
+    <!-- ========================== -->
+    <!-- Test Suites               -->
+    <!-- ========================== -->
+    <testsuites>
+        <testsuite name="RateLimiter">
+            <directory suffix="Test.php">tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- ========================== -->
+    <!-- PHP Env                   -->
+    <!-- ========================== -->
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="REDIS_HOST" value="127.0.0.1"/>
+        <env name="REDIS_PORT" value="6379"/>
+
+        <env name="MONGO_HOST" value="127.0.0.1"/>
+        <env name="MONGO_PORT" value="27017"/>
+        <env name="MONGO_DB" value="rate_limiter_test"/>
+
+        <env name="MYSQL_HOST" value="127.0.0.1"/>
+        <env name="MYSQL_PORT" value="3306"/>
+        <env name="MYSQL_USER" value="root"/>
+        <env name="MYSQL_PASS" value="root"/>
+        <env name="MYSQL_DB" value="rate_limiter_test"/>
+    </php>
+
+    <!-- ========================== -->
+    <!-- Source to be tested       -->
+    <!-- ========================== -->
+    <source>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </source>
+
+</phpunit>

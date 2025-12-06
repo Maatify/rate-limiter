@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Maatify.dev
  * User: Maatify.dev
@@ -65,7 +66,8 @@ final class RateLimitStatusDTO
         public readonly bool $blocked = false,
         public ?int $backoffSeconds = null,
         public ?string $nextAllowedAt = null,
-    ) {}
+    ) {
+    }
 
     /**
      * 🔹 Convert the DTO data into an associative array.

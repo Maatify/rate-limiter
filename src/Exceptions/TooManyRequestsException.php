@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Maatify.dev
  * User: Maatify.dev
@@ -52,4 +53,3 @@ final class TooManyRequestsException extends Exception
         $this->status = $status;
     }
 }
-

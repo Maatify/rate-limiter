@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by Maatify.dev
  * User: Maatify.dev
@@ -96,11 +97,11 @@ final class MySQLRateLimiter implements RateLimiterInterface
         $key = "{$platform->value()}_{$action->value()}_{$key}";
 
         // ⚙️ Atomic upsert: insert or increment counter
-        $stmt = $this->pdo->prepare("
+        $stmt = $this->pdo->prepare('
             INSERT INTO ip_rate_limits (key_name, count, last_attempt)
             VALUES (:key, 1, NOW())
             ON DUPLICATE KEY UPDATE count = count + 1, last_attempt = NOW()
-        ");
+        ');
         $stmt->execute(['key' => $key]);
 
         // 📊 Retrieve current request count
@@ -144,7 +145,7 @@ final class MySQLRateLimiter implements RateLimiterInterface
         $key = "{$platform->value()}_{$action->value()}_{$key}";
 
         // 🗑️ Delete record from table
-        $stmt = $this->pdo->prepare("DELETE FROM ip_rate_limits WHERE key_name = ?");
+        $stmt = $this->pdo->prepare('DELETE FROM ip_rate_limits WHERE key_name = ?');
         return $stmt->execute([$key]);
     }
 
@@ -173,7 +174,7 @@ final class MySQLRateLimiter implements RateLimiterInterface
         $key = "{$platform->value()}_{$action->value()}_{$key}";
 
         // 📊 Query for the current counter value
-        $stmt = $this->pdo->prepare("SELECT count FROM ip_rate_limits WHERE key_name = ?");
+        $stmt = $this->pdo->prepare('SELECT count FROM ip_rate_limits WHERE key_name = ?');
         $stmt->execute([$key]);
         $count = (int) $stmt->fetchColumn();
 
@@ -231,13 +232,13 @@ final class MySQLRateLimiter implements RateLimiterInterface
         $nextAllowed = (new \DateTimeImmutable("+{$backoff} seconds"))->format('Y-m-d H:i:s');
 
         // 🧾 Update or insert backoff data into database
-        $stmt = $this->pdo->prepare("
+        $stmt = $this->pdo->prepare('
             INSERT INTO ip_rate_limits (rate_key, blocked_until, backoff_seconds)
             VALUES (:key, :until, :backoff)
             ON DUPLICATE KEY UPDATE
                 blocked_until = VALUES(blocked_until),
                 backoff_seconds = VALUES(backoff_seconds)
-        ");
+        ');
         $stmt->execute([
             'key' => $key,
             'until' => $nextAllowed,
