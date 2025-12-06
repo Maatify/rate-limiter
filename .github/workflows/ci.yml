@@ -1,4 +1,4 @@
-name: 🚀 CI – Maatify Rate Limiter
+name: CI – Maatify Rate Limiter
 
 on:
   push:
@@ -8,62 +8,224 @@ on:
 
 jobs:
   test:
-    name: 🧪 Run PHPUnit Tests
+    name: 🧪 Rate Limiter Tests
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
+    env:
+      GH_START_ISO: ${{ github.event.head_commit.timestamp }}
+      APP_ENV: testing
+
+      # Redis
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      REDIS_PASS: ""
+      REDIS_DSN: "redis://127.0.0.1:6379"
+
+      # Mongo
+      MONGO_HOST: 127.0.0.1
+      MONGO_PORT: 27017
+      MONGO_DB: rate_limiter_test
+      MONGO_DSN: "mongodb://127.0.0.1:27017/rate_limiter_test"
+
+      # MySQL
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASS: root
+      MYSQL_DB: rate_limiter_test
+      MYSQL_DSN: "mysql:host=127.0.0.1;dbname=rate_limiter_test;charset=utf8mb4"
+
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - "6379:6379"
+
+      mongo:
+        image: mongo:7
+        ports:
+          - "27017:27017"
+
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: rate_limiter_test
+          MYSQL_AUTHENTICATION_PLUGIN: mysql_native_password
+        ports:
+          - "3306:3306"
+
     steps:
-      # -----------------------------------------
-      # 🧩 Step 1: Checkout source
-      # -----------------------------------------
+      # ---------------------------------------------
+      # 1) Checkout
+      # ---------------------------------------------
       - name: 📦 Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # -----------------------------------------
-      # ⚡ Step 2: Cache Composer
-      # -----------------------------------------
+      # ---------------------------------------------
+      # 2) PHP Setup
+      # ---------------------------------------------
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          coverage: pcov
+          extensions: mbstring, intl, pdo, pdo_mysql, redis, mongodb
+          tools: composer
+
+      # ---------------------------------------------
+      # 3) Composer cache
+      # ---------------------------------------------
       - name: 🧰 Cache Composer
         uses: actions/cache@v4
         with:
-          path: ~/.composer/cache
+          path: |
+            ~/.composer/cache
+            ~/.cache/composer
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
+          restore-keys: ${{ runner.os }}-composer-
 
-      # -----------------------------------------
-      # 🐳 Step 3: Build Docker services (Redis, MySQL, Mongo, PHP)
-      # -----------------------------------------
-      - name: ⚙️ Build Docker environment
+      - name: 🔑 Configure Composer GitHub token
+        run: composer config -g github-oauth.github.com "${{ github.token }}"
+
+      # ---------------------------------------------
+      # 4) Install dependencies
+      # ---------------------------------------------
+      - name: 📥 Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: ⚙️ Rebuild Autoload
+        run: composer dump-autoload --optimize
+
+      # ---------------------------------------------
+      # 5) Wait for MySQL
+      # ---------------------------------------------
+      - name: 🕒 Wait for MySQL
         run: |
-          echo "🏗️ Building CI Docker environment..."
-          docker compose -f docker-compose.ci.yml build
+          for i in {1..25}; do
+            mysqladmin ping -h $MYSQL_HOST --silent && break
+            echo "⏳ Waiting for MySQL..."
+            sleep 2
+          done
 
-      # -----------------------------------------
-      # ⚙️ Step 4: Prepare environment variables
-      # -----------------------------------------
-      - name: 🧾 Prepare .env configuration
+      - name: 🗄️ Init MySQL database
         run: |
-          echo "REDIS_HOST=redis" >> .env
-          echo "REDIS_PORT=6379" >> .env
-          echo "MYSQL_DSN=mysql:host=mysql;dbname=maatify_test" >> .env
-          echo "MYSQL_USER=root" >> .env
-          echo "MYSQL_PASS=root" >> .env
-          echo "MONGO_URI=mongodb://mongo:27017" >> .env
-          echo "MONGO_DB=maatify_test" >> .env
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS \
+            -e "CREATE DATABASE IF NOT EXISTS rate_limiter_test;"
 
-      # -----------------------------------------
-      # 🧪 Step 5: Run tests interactively (Live logs)
-      # -----------------------------------------
-      - name: 🧪 Run PHPUnit Tests (live)
+      # ---------------------------------------------
+      # 6) PHPStan
+      # ---------------------------------------------
+      - name: 🧹 Run PHPStan
+        id: phpstan
         run: |
-          echo "🚀 Starting full integration test environment..."
-          docker compose -f docker-compose.ci.yml run --rm php
+          set +e
+          vendor/bin/phpstan analyse src tests --level=max > phpstan.log
+          EXIT=${?}
+          ERR=$(grep -Eo "Found [0-9]+ errors" phpstan.log | grep -Eo "[0-9]+")
+          echo "phpstan_exit=$EXIT" >> $GITHUB_OUTPUT
+          echo "phpstan_errors=${ERR:-0}" >> $GITHUB_OUTPUT
 
-      # -----------------------------------------
-      # 📤 Step 6: Upload results (optional)
-      # -----------------------------------------
-      - name: 📤 Upload Test Results
+      - name: 📄 Show PHPStan output
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: 🧪 phpunit-results
-          path: tests/_output/
+        run: cat phpstan.log
+
+      # ---------------------------------------------
+      # 7) PHPUnit + Coverage
+      # ---------------------------------------------
+      - name: Install bc
+        run: sudo apt-get install -y bc
+
+      - name: 🧪 Run PHPUnit
+        id: phpunit
+        run: |
+          php -d pcov.enabled=1 \
+            -d pcov.directory=./src \
+            vendor/bin/phpunit \
+            --configuration phpunit.xml.dist \
+            --coverage-clover coverage.xml \
+            --coverage-html coverage \
+            | tee phpunit.log
+
+      # ---------------------------------------------
+      # 8) Extract Coverage
+      # ---------------------------------------------
+      - name: 📊 Extract Coverage
+        id: coverage
+        run: |
+          COV=$(php -r '
+            $xml=@simplexml_load_file("coverage.xml");
+            $m=$xml->project->metrics ?? null;
+            if(!$m){ echo "0"; exit; }
+            echo (int)round(((int)$m["coveredstatements"] / (int)$m["statements"]) * 100);
+          ')
+          echo "coverage=${COV}" >> $GITHUB_OUTPUT
+
+      # ---------------------------------------------
+      # 9) Summary Report
+      # ---------------------------------------------
+      - name: 🧾 Summary Report
+        if: always()
+        run: |
+          echo "### 🧾 Rate Limiter CI Summary" >> $GITHUB_STEP_SUMMARY
+          echo "🧹 PHPStan: ${{ steps.phpstan.outputs.phpstan_errors }} errors" >> $GITHUB_STEP_SUMMARY
+          echo "📊 Coverage: ${{ steps.coverage.outputs.coverage }}%" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          tail -n 20 phpunit.log >> $GITHUB_STEP_SUMMARY
+
+      # ---------------------------------------------
+      # 10) Telegram Notification
+      # ---------------------------------------------
+      - name: 📲 Notify Telegram
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_CI_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CI_CHAT_ID }}
+        run: |
+          START_TS=$(date -u -d "$GH_START_ISO" +%s)
+          END_TS=$(date +%s)
+          DURATION=$((END_TS - START_TS))
+          
+          if [ "$DURATION" -lt 60 ]; then
+            DURATION_STR="${DURATION}s"
+          else
+            DURATION_STR="$(($DURATION / 60))m $(($DURATION % 60))s"
+          fi
+
+          PHPSTAN_ERR=${{ steps.phpstan.outputs.phpstan_errors }}
+          COV=${{ steps.coverage.outputs.coverage }}
+
+          STATUS="🟢 All tests passed"
+          HEADER="Rate Limiter CI Report"
+          COLOR="🟢"
+          
+          if grep -q "FAILURES!" phpunit.log || [ "${{ job.status }}" != "success" ]; then
+            STATUS="🔴 Tests or PHPStan failed!"
+            HEADER="Rate Limiter CI Alert"
+            COLOR="🔴"
+          fi
+
+          MSG="📢 <b>${HEADER}</b>
+          
+          ${COLOR} ${STATUS}
+          
+          🧹 <b>PHPStan:</b> ${PHPSTAN_ERR} errors
+          📊 <b>Coverage:</b> ${COV}%
+          
+          📦 <b>Project:</b> ${GITHUB_REPOSITORY}
+          🌿 <b>Branch:</b> ${GITHUB_REF_NAME}
+          👨‍💻 <b>By:</b> ${GITHUB_ACTOR}
+          
+          ⏳ <b>Duration:</b> ${DURATION_STR}
+          
+          🔗 <a href='${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}'>View CI Logs</a>
+          "
+
+          curl -s -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          -H "Content-Type: application/json" \
+          -d "$(jq -n --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$MSG" --arg pm "HTML" '{chat_id: $chat_id, text: $text, parse_mode: $pm}')"
