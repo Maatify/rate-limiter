@@ -196,4 +196,77 @@ final class MySQLRateLimiter implements RateLimiterInterface
             resetAfter: $config['interval']
         );
     }
+
+    /**
+     * ⚙️ Calculate exponential backoff duration.
+     *
+     * 🧠 Computes the delay (in seconds) before the next allowed attempt
+     * using an exponential backoff strategy.
+     *
+     * @param int $attempts Number of consecutive failed or blocked attempts.
+     * @param int $base Base growth multiplier (default = 2).
+     * @param int $max Maximum backoff duration (default = 3600 seconds).
+     *
+     * @return int Calculated backoff duration in seconds.
+     *
+     * ✅ Example:
+     * ```php
+     * $delay = $this->calculateBackoff(3); // Returns 8 seconds
+     * ```
+     */
+    private function calculateBackoff(int $attempts, int $base = 2, int $max = 3600): int
+    {
+        return min(pow($base, $attempts), $max);
+    }
+
+    /**
+     * 🔒 Apply exponential backoff to a MySQL-stored rate-limit record.
+     *
+     * Updates or inserts a record in the database to reflect a temporary block period,
+     * including `blocked_until` and `backoff_seconds` metadata.
+     *
+     * @param string $key Unique identifier (e.g., IP, user ID, token).
+     * @param int $attempts Current number of failed or blocked attempts.
+     *
+     * @return RateLimitStatusDTO A DTO describing the applied backoff and next allowed time.
+     *
+     * ✅ Example:
+     * ```php
+     * $status = $this->applyBackoff('user123', 4);
+     * echo $status->nextAllowedAt;
+     * ```
+     */
+    private function applyBackoff(string $key, int $attempts): RateLimitStatusDTO
+    {
+        // ⏱️ Compute next backoff duration
+        $backoff = $this->calculateBackoff($attempts);
+        $nextAllowed = (new \DateTimeImmutable("+{$backoff} seconds"))->format('Y-m-d H:i:s');
+
+        // 🧾 Update or insert backoff data into database
+        $stmt = $this->pdo->prepare('
+            INSERT INTO ip_rate_limits (rate_key, blocked_until, backoff_seconds)
+            VALUES (:key, :until, :backoff)
+            ON DUPLICATE KEY UPDATE
+                blocked_until = VALUES(blocked_until),
+                backoff_seconds = VALUES(backoff_seconds)
+        ');
+        if ($stmt) {
+            $stmt->execute([
+                'key' => $key,
+                'until' => $nextAllowed,
+                'backoff' => $backoff
+            ]);
+        }
+
+        // 📦 Return structured DTO summarizing current backoff status
+        return new RateLimitStatusDTO(
+            limit: 0,
+            remaining: 0,
+            resetAfter: $backoff,
+            retryAfter: $backoff,
+            blocked: true,
+            backoffSeconds: $backoff,
+            nextAllowedAt: $nextAllowed
+        );
+    }
 }

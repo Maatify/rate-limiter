@@ -12,9 +12,12 @@
 
 declare(strict_types=1);
 
+use Maatify\RateLimiter\Drivers\MongoRateLimiter;
+use Maatify\RateLimiter\Drivers\MySQLRateLimiter;
 use Maatify\RateLimiter\DTO\RateLimitStatusDTO;
 use PHPUnit\Framework\TestCase;
 use Maatify\RateLimiter\Resolver\RateLimiterResolver;
+use MongoDB\Collection;
 
 /**
  * 🧩 Class BackoffTest
@@ -114,6 +117,40 @@ final class BackoffTest extends TestCase
             '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/',
             (string)$dto->nextAllowedAt,
             'Expected nextAllowedAt in Y-m-d H:i:s format.'
+        );
+    }
+
+    public function testMongoBackoff(): void
+    {
+        $collection = $this->createMock(Collection::class);
+        $limiter = new MongoRateLimiter($collection);
+
+        /** @var RateLimitStatusDTO $dto */
+        $dto = (new ReflectionMethod($limiter, 'applyBackoff'))
+            ->invoke($limiter, 'test_key', 3);
+
+        $this->assertMatchesRegularExpression(
+            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/',
+            (string)$dto->nextAllowedAt
+        );
+    }
+
+    public function testMySQLBackoff(): void
+    {
+        $pdo = $this->createMock(PDO::class);
+        $stmt = $this->createMock(PDOStatement::class);
+        $pdo->method('prepare')->willReturn($stmt);
+        $stmt->method('execute')->willReturn(true);
+
+        $limiter = new MySQLRateLimiter($pdo);
+
+        /** @var RateLimitStatusDTO $dto */
+        $dto = (new ReflectionMethod($limiter, 'applyBackoff'))
+            ->invoke($limiter, 'test_key', 3);
+
+        $this->assertMatchesRegularExpression(
+            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/',
+            (string)$dto->nextAllowedAt
         );
     }
 }
