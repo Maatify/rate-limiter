@@ -235,6 +235,7 @@ final class MySQLRateLimiter implements RateLimiterInterface
      * $status = $this->applyBackoff('user123', 4);
      * echo $status->nextAllowedAt;
      * ```
+     * @phpstan-ignore method.unused
      */
     private function applyBackoff(string $key, int $attempts): RateLimitStatusDTO
     {
