@@ -187,6 +187,54 @@ jobs:
 
           echo "Coverage: ${COV}%"
           echo "coverage=${COV}" >> $GITHUB_OUTPUT
+          
+      - name: Generate Coverage Badge JSON
+        run: |
+          echo "{
+            \"schemaVersion\": 1,
+            \"label\": \"coverage\",
+            \"message\": \"${{ steps.coverage.outputs.coverage }}%\",
+            \"color\": \"9C27B0\"
+          }" > coverage-badge.json
+
+      - name: Stash CI artifacts (before switching branches)
+        if: github.event_name == 'push'
+        run: |
+          cp coverage-badge.json /tmp/coverage-badge.json
+          cp phpunit.log /tmp/phpunit.log || true
+
+      - name: Upload Coverage Badge to badges branch
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          git fetch origin
+
+          if git ls-remote --exit-code origin badges; then
+            echo "Badges branch exists. Checking out..."
+            git checkout badges
+          else
+            echo "Badges branch does NOT exist. Creating it..."
+            git checkout --orphan badges
+          fi
+
+          # Make the branch deterministic (avoid leftover files causing weirdness)
+          git reset --hard
+          git clean -fdx
+
+          # Overwrite badge file and force-add in case of .gitignore
+          cp /tmp/coverage-badge.json coverage.json
+          git add -f coverage.json
+
+          # Commit only if there is an actual staged change
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Update coverage badge to ${{ steps.coverage.outputs.coverage }}%"
+          fi
+
+          git push origin badges --force
 
       # ---------------------------------------------
       # 9) Summary Report
@@ -252,49 +300,3 @@ jobs:
             "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
           -H "Content-Type: application/json" \
           -d "$(jq -n --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$MSG" --arg pm "HTML" '{chat_id: $chat_id, text: $text, parse_mode: $pm}')"
-          
-      # ---------------------------------------------
-      # 11) Generate coverage.json for Badge
-      # ---------------------------------------------
-      - name: 🏷️ Generate Coverage Badge JSON
-        if: always()
-        run: |
-          COV=${{ steps.coverage.outputs.coverage }}
-
-          COLOR="red"
-          if [ "$COV" -ge 90 ]; then COLOR="brightgreen";
-          elif [ "$COV" -ge 80 ]; then COLOR="green";
-          elif [ "$COV" -ge 70 ]; then COLOR="yellowgreen";
-          elif [ "$COV" -ge 60 ]; then COLOR="yellow";
-          elif [ "$COV" -ge 50 ]; then COLOR="orange";
-          fi
-
-          cat > coverage.json <<EOF
-          {
-            "schemaVersion": 1,
-            "label": "coverage",
-            "message": "${COV}%",
-            "color": "$COLOR"
-          }
-          EOF
-          
-      # ---------------------------------------------
-      # 12) Commit & Push Coverage Badge
-      # ---------------------------------------------
-      - name: 🚀 Push Coverage Badge to badges Branch
-        if: always()
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
-          # ✅ احذف الملف المؤقت قبل تغيير الفرع (عشان نتجنب الخطأ)
-          rm -f coverage.json
-
-          git fetch origin badges
-          git checkout badges
-
-          git add coverage.json
-          git commit -m "chore: update coverage badge [skip ci]" || echo "No changes"
-          git push origin badges
-
-
