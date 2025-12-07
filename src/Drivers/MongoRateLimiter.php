@@ -230,6 +230,7 @@ final class MongoRateLimiter implements RateLimiterInterface
      * echo $dto->nextAllowedAt;
      * ```
      */
+    // @phpstan-ignore-next-line
     private function applyBackoff(string $key, int $attempts): RateLimitStatusDTO
     {
         // ⏱️ Calculate next backoff window

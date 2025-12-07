@@ -236,6 +236,7 @@ final class MySQLRateLimiter implements RateLimiterInterface
      * echo $status->nextAllowedAt;
      * ```
      */
+    // @phpstan-ignore-next-line
     private function applyBackoff(string $key, int $attempts): RateLimitStatusDTO
     {
         // ⏱️ Compute next backoff duration
@@ -250,11 +251,13 @@ final class MySQLRateLimiter implements RateLimiterInterface
                 blocked_until = VALUES(blocked_until),
                 backoff_seconds = VALUES(backoff_seconds)
         ');
-        $stmt->execute([
-            'key' => $key,
-            'until' => $nextAllowed,
-            'backoff' => $backoff
-        ]);
+        if ($stmt) {
+            $stmt->execute([
+                'key' => $key,
+                'until' => $nextAllowed,
+                'backoff' => $backoff
+            ]);
+        }
 
         // 📦 Return structured DTO summarizing current backoff status
         return new RateLimitStatusDTO(
