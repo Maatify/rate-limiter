@@ -1,527 +1,199 @@
+# Maatify Rate Limiter
+
+**PSR-compliant distributed rate limiting engine supporting Redis, MongoDB, and MySQL with adaptive exponential backoff.**
+
 ![Maatify.dev](https://www.maatify.dev/assets/img/img/maatify_logo_white.svg)
 
 ---
 
-# 📦 maatify/rate-limiter
-
 [![Version](https://img.shields.io/packagist/v/maatify/rate-limiter?label=Version&color=4C1)](https://packagist.org/packages/maatify/rate-limiter)
 [![PHP](https://img.shields.io/packagist/php-v/maatify/rate-limiter?label=PHP&color=777BB3)](https://packagist.org/packages/maatify/rate-limiter)
+![PHP Version](https://img.shields.io/badge/php-%3E%3D8.4-blue)
+
 [![Build](https://github.com/Maatify/rate-limiter/actions/workflows/ci.yml/badge.svg?label=Build&color=brightgreen)](https://github.com/Maatify/rate-limiter/actions/workflows/ci.yml)
-[![Monthly Downloads](https://img.shields.io/packagist/dm/maatify/rate-limiter?label=Monthly%20Downloads&color=00A8E8)](https://packagist.org/packages/maatify/rate-limiter)
-[![Total Downloads](https://img.shields.io/packagist/dt/maatify/rate-limiter?label=Total%20Downloads&color=2AA)](https://packagist.org/packages/maatify/rate-limiter)
-[![Stars](https://img.shields.io/github/stars/Maatify/rate-limiter?label=Stars&color=FFD43B)](https://github.com/Maatify/rate-limiter/stargazers)
+
+![Monthly Downloads](https://img.shields.io/packagist/dm/maatify/rate-limiter?label=Monthly%20Downloads&color=00A8E8)
+![Total Downloads](https://img.shields.io/packagist/dt/maatify/rate-limiter?label=Total%20Downloads&color=2AA9E0)
+
+![Stars](https://img.shields.io/github/stars/Maatify/rate-limiter?label=Stars&color=FFD43B)
 [![License](https://img.shields.io/github/license/Maatify/rate-limiter?label=License&color=blueviolet)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Stable-success?style=flat-square)]()
-[![Code Quality](https://img.shields.io/codefactor/grade/github/Maatify/rate-limiter/main)](https://www.codefactor.io/repository/github/Maatify/rate-limiter)
+![Status](https://img.shields.io/badge/Status-Stable-success)
+[![Code Quality](https://img.shields.io/codefactor/grade/github/Maatify/rate-limiter/main?color=brightgreen)](https://www.codefactor.io/repository/github/Maatify/rate-limiter)
+
+![PHPStan](https://img.shields.io/badge/PHPStan-Level%20Max-4E8CAE)
+![Coverage](https://img.shields.io/badge/Coverage-95%25-success)
+
+[![Changelog](https://img.shields.io/badge/Changelog-View-blue)](CHANGELOG.md)
+[![Security](https://img.shields.io/badge/Security-Policy-important)](SECURITY.md)
 
 ---
 
-# 🧩 **Maatify Rate Limiter**
+# 🚀 Overview
 
-A PSR-compliant Rate Limiter library supporting Redis, MongoDB, and MySQL
-— with dynamic driver resolver, middleware integration, and reusable enum contracts.
+**Maatify Rate Limiter** is a fully decoupled, PSR-compliant rate-limiting engine designed for:
 
-> 🔗 [بالعربي](./README-AR.md)
+- Native PHP
+- Slim Framework
+- Laravel Middleware
+- Custom API Gateways
+
+It provides **distributed rate-limiting with adaptive exponential backoff**, unified across:
+
+- **Redis**
+- **MongoDB**
+- **MySQL**
+
+### Why this library?
+
+- Zero storage lock-in  
+- Unified attempt/status/reset API  
+- Global per-IP rate limit  
+- Adaptive **Exponential Backoff (2ⁿ)**  
+- Full PSR-7 / PSR-15 middleware compatibility  
+- PHPStan Level Max ready  
 
 ---
 
-<!-- PHASE_STATUS_START -->
+## ✅ Supported Drivers
 
-## ✅ Completed Phases
-
-* [x] Phase 1 – Environment Setup (Local)
-* [x] Phase 2 – Core Architecture
-* [x] Phase 3 – Storage Drivers
-* [x] Phase 3.1 – Enum Contracts Refactor
-* [x] Phase 4 – Resolver & Middleware
-* [x] Phase 4.1 – Continuous Integration (Docker + GitHub Actions)
-* [x] Phase 5 – Exponential Backoff & Global Limit
-<!-- PHASE_STATUS_END -->
+| Backend  | Driver Type | Use Case                          |
+|----------|-------------|-----------------------------------|
+| Redis    | Real Driver | High-performance in-memory limits |
+| MongoDB  | Real Driver | Distributed analytics             |
+| MySQL    | Real Driver | Persistent audit & compliance     |
 
 ---
 
-## ⚙️ Local Setup
+# 📦 Installation
 
 ```bash
-composer install
-cp .env.example .env
-```
-
-Then edit `.env` to match your local database and driver configuration.
+composer require maatify/rate-limiter
+````
 
 ---
 
-## 🧠 Description
-
-**Maatify Rate Limiter** provides a unified abstraction for distributed rate limiting
-with multiple backends (Redis, MongoDB, MySQL) and dynamic resolver support.
-
-It follows **PSR-12**, **PSR-15**, and **PSR-7** standards,
-and can be integrated directly with frameworks like **Slim** or **Laravel**.
-
----
-
-## 📂 Project Structure
-
-```
-maatify-rate-limiter/
-│
-├── .env.example
-├── composer.json
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-├── docker-compose.ci.yml
-├── src/
-│   ├── Config/
-│   │   └── RateLimitConfig.php
-│   ├── Contracts/
-│   │   ├── RateLimiterInterface.php
-│   │   ├── RateLimitActionInterface.php
-│   │   └── PlatformInterface.php
-│   ├── DTO/
-│   │   └── RateLimitStatusDTO.php
-│   ├── Drivers/
-│   │   ├── RedisRateLimiter.php
-│   │   ├── MongoRateLimiter.php
-│   │   └── MySQLRateLimiter.php
-│   ├── Enums/
-│   │   ├── RateLimitActionEnum.php
-│   │   └── PlatformEnum.php
-│   ├── Exceptions/
-│   │   └── TooManyRequestsException.php
-│   ├── Middleware/
-│   │   └── RateLimitHeadersMiddleware.php
-│   └── Resolver/
-│       └── RateLimiterResolver.php
-│
-├── tests/
-│   ├── bootstrap.php
-│   ├── CoreStructureTest.php
-│   ├── DriversTest.php
-│   └── MiddlewareTest.php
-│
-├── docs/
-│   └── phases/
-│       ├── README.phase1.md
-│       ├── README.phase2.md
-│       ├── README.phase3.md
-│       ├── README.phase3.1.md
-│       ├── README.phase4.md
-│       └── README.phase4.1.md
-│
-├── CHANGELOG.md
-├── VERSION
-└── README.md
-```
----
-
-## 🧩 CI/CD Integration (Phase 4.1)
-
-🚀 **Phase 4.1 introduced full Continuous Integration support** via Docker Compose + GitHub Actions.
-
-* CI runs Redis, MySQL, and MongoDB containers in isolation.
-* PHPUnit runs inside Docker (`docker compose run --rm php`) with **live console output**.
-* Auto `.env` generation during pipeline.
-* Composer caching for faster re-runs.
-* Optional upload of test results (`tests/_output`).
-
-💡 CI Workflow File: `.github/workflows/ci.yml`
-💡 Docker Stack File: `docker-compose.ci.yml`
-
----
-
-## 🧩 Current Version
-
-```
-1.0.0-alpha-phase5
-```
-
----
-
-
-## 🧾 CHANGELOG SUMMARY
-
-### Phase 4.1 – Continuous Integration (CI)
-
-* Added **Docker-based** CI with `docker-compose.ci.yml`.
-* Added GitHub Actions workflow `.github/workflows/ci.yml`.
-* Integrated **Redis 7**, **MySQL 8**, and **MongoDB 7** containers.
-* Enabled **live PHPUnit output** inside CI logs.
-* Automated `.env` creation and **Composer caching**.
-* Added artifact upload for test results.
-* Completed **full integration test environment**.
-
-### Phase 5 – Exponential Backoff & Global Limit
-
-* Added **adaptive rate-limiting** using exponential backoff (2ⁿ logic).
-* Added **global per-IP rate limit** (across all actions).
-* Extended `RateLimitStatusDTO` to include `backoffSeconds` and `nextAllowedAt`.
-* Added `RateLimitStatusDTO::fromArray()` for DTO reconstruction.
-* Enhanced `TooManyRequestsException` to include retry metadata.
-* Updated `.env.example` with:
-    - `GLOBAL_RATE_LIMIT`
-    - `GLOBAL_RATE_WINDOW`
-    - `BACKOFF_BASE`
-    - `BACKOFF_MAX`
-* Added new unit tests `tests/BackoffTest.php`.
-* Implemented global per-IP rate tracking for Redis.
----
-## ✅ Summary Table
-
-| Environment           | Supported | Notes                       |
-|-----------------------|-----------|-----------------------------|
-| PHP (raw)             | ✅         | Works out of the box        |
-| Slim                  | ✅         | Fully PSR-15 compatible     |
-| Laravel               | ✅         | Custom middleware ready     |
-| Custom Enums          | ✅         | Through interface contracts |
-| Redis / Mongo / MySQL | ✅         | Switch easily via resolver  |
-| PSR Standards         | ✅         | PSR-7 / PSR-15 / PSR-12     |
-
----
-
-# 📘 USAGE EXAMPLES
-
----
-
-## 🧱 1️⃣ Basic Example (Native PHP)
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-use Maatify\RateLimiter\Resolver\RateLimiterResolver;
-use Maatify\RateLimiter\Enums\RateLimitActionEnum;
-use Maatify\RateLimiter\Enums\PlatformEnum;
-use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
-
-$config = [
-    'driver' => 'redis',
-    'redis_host' => '127.0.0.1',
-    'redis_port' => 6379,
-];
-
-$resolver = new RateLimiterResolver($config);
-$limiter = $resolver->resolve();
-
-$key = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-
-try {
-    $status = $limiter->attempt($key, RateLimitActionEnum::LOGIN, PlatformEnum::WEB);
-    echo "✅ Allowed. Remaining: {$status->remaining}\n";
-} catch (TooManyRequestsException $e) {
-    echo "⛔ {$e->getMessage()}. Try again later.\n";
-}
-```
-
----
-
-## ⚙️ 2️⃣ Slim Framework Example (Full Middleware Integration)
-
-```php
-use Slim\Factory\AppFactory;
-use Maatify\RateLimiter\Resolver\RateLimiterResolver;
-use Maatify\RateLimiter\Middleware\RateLimitHeadersMiddleware;
-use Maatify\RateLimiter\Enums\RateLimitActionEnum;
-use Maatify\RateLimiter\Enums\PlatformEnum;
-
-require __DIR__ . '/vendor/autoload.php';
-
-$app = AppFactory::create();
-
-$config = [
-    'driver' => 'redis',
-    'redis_host' => '127.0.0.1',
-];
-
-$resolver = new RateLimiterResolver($config);
-$limiter = $resolver->resolve();
-
-$app->add(new RateLimitHeadersMiddleware(
-    $limiter,
-    RateLimitActionEnum::LOGIN,
-    PlatformEnum::WEB
-));
-
-$app->get('/login', function ($request, $response) {
-    $response->getBody()->write('Welcome to login endpoint!');
-    return $response;
-});
-
-$app->run();
-```
-
-📘 Output Headers:
-
-```
-X-RateLimit-Limit: 5
-X-RateLimit-Remaining: 4
-X-RateLimit-Reset: 60
-Retry-After: 60
-```
-
----
-
-## 🧩 3️⃣ Laravel Example (Custom Middleware)
-
-📄 `app/Http/Middleware/RateLimitHeaders.php`
-
-```php
-<?php
-
-namespace App\Http\Middleware;
-
-use Closure;
-use Maatify\RateLimiter\Resolver\RateLimiterResolver;
-use Maatify\RateLimiter\Enums\RateLimitActionEnum;
-use Maatify\RateLimiter\Enums\PlatformEnum;
-use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
-
-class RateLimitHeaders
-{
-    public function handle($request, Closure $next)
-    {
-        $config = ['driver' => 'redis', 'redis_host' => '127.0.0.1'];
-        $resolver = new RateLimiterResolver($config);
-        $limiter = $resolver->resolve();
-
-        $key = $request->ip();
-
-        try {
-            $status = $limiter->attempt($key, RateLimitActionEnum::API_CALL, PlatformEnum::API);
-        } catch (TooManyRequestsException $e) {
-            return response()->json([
-                'error' => 'Too many requests',
-                'retry_after' => $status->retryAfter ?? 60,
-            ], 429);
-        }
-
-        $response = $next($request);
-
-        return $response
-            ->header('X-RateLimit-Limit', $status->limit)
-            ->header('X-RateLimit-Remaining', $status->remaining)
-            ->header('X-RateLimit-Reset', $status->resetAfter);
-    }
-}
-```
-
-📘 Register in `Kernel.php`:
-
-```php
-'ratelimit' => \App\Http\Middleware\RateLimitHeaders::class,
-```
-
-Usage:
-
-```php
-Route::get('/api/orders', [OrderController::class, 'index'])->middleware('ratelimit');
-```
-
----
-
-## 🌍 4️⃣ API JSON Example (Custom Controller)
-
-```php
-<?php
-
-use Maatify\RateLimiter\Resolver\RateLimiterResolver;
-use Maatify\RateLimiter\Enums\RateLimitActionEnum;
-use Maatify\RateLimiter\Enums\PlatformEnum;
-use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
-
-$config = ['driver' => 'mysql', 'mysql_dsn' => 'mysql:host=127.0.0.1;dbname=ratelimiter', 'mysql_user' => 'root'];
-
-$resolver = new RateLimiterResolver($config);
-$limiter = $resolver->resolve();
-
-header('Content-Type: application/json');
-$key = $_SERVER['REMOTE_ADDR'];
-
-try {
-    $status = $limiter->attempt($key, RateLimitActionEnum::API_CALL, PlatformEnum::API);
-
-    echo json_encode([
-        'success' => true,
-        'remaining' => $status->remaining,
-        'reset_after' => $status->resetAfter,
-    ]);
-} catch (TooManyRequestsException $e) {
-    http_response_code(429);
-    echo json_encode([
-        'success' => false,
-        'error' => $e->getMessage(),
-        'retry_after' => $status->retryAfter ?? 60,
-    ]);
-}
-```
-
----
-
-## 🧠 5️⃣ Custom Enum Contracts Example (From Phase 3.1)
-
-```php
-use Maatify\RateLimiter\Contracts\RateLimitActionInterface;
-use Maatify\RateLimiter\Contracts\PlatformInterface;
-use Maatify\RateLimiter\Resolver\RateLimiterResolver;
-
-enum MyActionEnum: string implements RateLimitActionInterface
-{
-    case ORDER_SUBMIT = 'order_submit';
-    public function value(): string { return $this->value; }
-}
-
-enum MyPlatformEnum: string implements PlatformInterface
-{
-    case CUSTOMER_APP = 'customer_app';
-    public function value(): string { return $this->value; }
-}
-
-$config = ['driver' => 'redis'];
-$resolver = new RateLimiterResolver($config);
-$limiter = $resolver->resolve();
-
-$status = $limiter->attempt('user-501', MyActionEnum::ORDER_SUBMIT, MyPlatformEnum::CUSTOMER_APP);
-
-echo json_encode($status->toArray(), JSON_PRETTY_PRINT);
-```
-
----
-
-## 🧩 6️⃣ Custom Header Key Example (X-API-KEY Mode)
-
-```php
-$app->add(new RateLimitHeadersMiddleware(
-    $limiter,
-    RateLimitActionEnum::API_CALL,
-    PlatformEnum::API,
-    keyHeader: 'X-API-KEY'
-));
-```
-
----
-
-## 🧠 7️⃣ Exponential Backoff Example (Redis Adaptive Mode)
+# ⚡ Quick Usage
 
 ```php
 use Maatify\RateLimiter\Resolver\RateLimiterResolver;
 use Maatify\RateLimiter\Enums\RateLimitActionEnum;
 use Maatify\RateLimiter\Enums\PlatformEnum;
-use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
 
-$config = [
-    'driver' => 'redis',
-    'redis_host' => '127.0.0.1',
-    'redis_port' => 6379,
-    'backoff_base' => 2,
-    'backoff_max' => 3600,
-];
-
-$resolver = new RateLimiterResolver($config);
+$resolver = new RateLimiterResolver(['driver' => 'redis']);
 $limiter  = $resolver->resolve();
 
-$key = 'ip:' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+$status = $limiter->attempt(
+    '127.0.0.1',
+    RateLimitActionEnum::LOGIN,
+    PlatformEnum::WEB
+);
 
-try {
-    $status = $limiter->attempt($key, RateLimitActionEnum::LOGIN, PlatformEnum::WEB);
-    echo "✅ Allowed – Remaining: {$status->remaining}";
-} catch (TooManyRequestsException $e) {
-    echo "⛔ Retry after {$status->backoffSeconds}s (next allowed: {$status->nextAllowedAt})";
-}
-````
-
-📘 **Environment variables**:
-
-```bash
-GLOBAL_RATE_LIMIT=1000
-GLOBAL_RATE_WINDOW=3600
-BACKOFF_BASE=2
-BACKOFF_MAX=3600
-```
----
-
-## ⚙️ Environment Variables (Rate Limiter Configuration)
-
-These variables control the **global rate limit** and **exponential backoff behavior**  
-used across all actions and IP addresses.
-
-You can define them in your `.env`, `.env.local`, or CI environment.
-
-| Variable             | Description                                                                                      | Example              | Type            |
-|----------------------|--------------------------------------------------------------------------------------------------|----------------------|-----------------|
-| `GLOBAL_RATE_LIMIT`  | Maximum number of allowed actions per IP (or user) within the window duration.                   | `5`                  | integer         |
-| `GLOBAL_RATE_WINDOW` | Duration of the rate-limit window in seconds. After this period, counters reset.                 | `60` (1 minute)      | integer         |
-| `BACKOFF_BASE`       | Exponential backoff multiplier. Each violation increases delay exponentially by this base value. | `2` → 2, 4, 8, 16... | integer / float |
-| `BACKOFF_MAX`        | Maximum delay (in seconds) allowed by exponential backoff. Prevents unreasonably long waits.     | `3600` (1 hour)      | integer         |
-
-📘 **Formula:**  
+echo $status->remaining;
 ```
 
-backoff_seconds = min( BACKOFF_BASE ** violation_count , BACKOFF_MAX )
-
-````
-
-### 🔍 Example `.env` file
-```env
-# Basic local testing
-GLOBAL_RATE_LIMIT=5
-GLOBAL_RATE_WINDOW=60
-BACKOFF_BASE=2
-BACKOFF_MAX=3600
-````
-
-### 💡 Tips
-
-* Lower values (e.g., 5 req/min) are recommended for **login** or **OTP** endpoints.
-* Higher values are suitable for **public APIs**.
-* `BACKOFF_BASE=2` gives a balanced exponential delay pattern.
-* Always include a `Retry-After` header in responses to inform the client when to retry.
-
-🧱 Example exponential pattern:
-
-| Violation Count | Delay (seconds)         |
-|-----------------|-------------------------|
-| 1               | 2                       |
-| 2               | 4                       |
-| 3               | 8                       |
-| 4               | 16                      |
-| 5               | 32                      |
-| 6               | 64                      |
-| ...             | ... up to `BACKOFF_MAX` |
-
+📘 **Full usage examples (Native, Slim, Laravel, API, Enums, Backoff):**
+➡️ **[examples/Examples.md](examples/Examples.md)**
 
 ---
 
-## 📦 Composer Dependencies
+# 🧩 Key Features
 
-To use this library fully:
+* **Unified API**: `attempt()`, `status()`, `reset()`
+* **Global Per-IP Limit**
+* **Adaptive Exponential Backoff**
+* **DTO-based Response Model**
+* **PSR-7 / PSR-15 Middleware Ready**
+* **Custom Enum Contracts**
+* **Driver Resolver**
+* **Strict Validation & Type Safety**
+* **PHPStan Level Max**
+
+---
+
+# 📄 Documentation
+
+* [**Arabic Documentation**](README-AR.md)
+* [**Usage Examples**](examples/Examples.md)
+* [**Changelog**](CHANGELOG.md)
+* [**Security Policy**](SECURITY.md)
+
+<details>
+<summary><strong>📚 Development History & Phase Details</strong></summary>
+
+* Phase 1 – Environment Setup
+* Phase 2 – Core Architecture
+* Phase 3 – Storage Drivers
+* Phase 3.1 – Enum Contracts Refactor
+* Phase 4 – Resolver & Middleware
+* Phase 4.1 – Continuous Integration
+* Phase 5 – Exponential Backoff & Global Rate Limit
+
+</details>
+
+---
+
+# 🧱 Dependencies Overview
+
+`maatify/rate-limiter` relies on PSR standards and selected open-source libraries.
+
+---
+
+## 🔌 Direct Open-Source Dependencies
+
+| Library                    | Purpose                 |
+|----------------------------|-------------------------|
+| psr/http-message           | HTTP message interfaces |
+| psr/http-server-middleware | PSR-15 middleware       |
+| psr/http-server-handler    | Request handler         |
+| redis / predis             | Redis driver            |
+| mongodb/mongodb            | MongoDB driver          |
+| phpunit/phpunit            | Testing                 |
+| phpstan/phpstan            | Static analysis         |
+
+---
+
+# 🧪 Testing
 
 ```bash
-composer require psr/http-message psr/http-server-middleware psr/http-server-handler
+composer test
 ```
 
-For Slim Framework support:
+Runs:
 
-```bash
-composer require slim/slim
-```
+* Driver consistency tests
+* Resolver tests
+* Middleware header tests
+* Backoff & global limit tests
+* Coverage reporting
 
 ---
 
 ## 🪪 License
 
-**[MIT license](LICENSE)** © [Maatify.dev](https://www.maatify.dev)
-
-You’re free to use, modify, and distribute this library with attribution.
+**[MIT License](LICENSE)**
+© [Maatify.dev](https://www.maatify.dev) — Free to use, modify, and distribute with attribution.
 
 ---
 
-## 🧱 Authors & Credits
+## 👤 Author
 
-**Developed by:** **Maatify.dev**
-[https://www.Maatify.dev](https://www.Maatify.dev)
+Engineered by **Mohamed Abdulalim** ([@megyptm](https://github.com/megyptm))
+Backend Lead & Technical Architect — [https://www.maatify.dev](https://www.maatify.dev)
 
-**Maintainer:** Mohamed Abdulalim
+---
 
-**Project:** maatify:rate-limiter
+## 🤝 Contributors
+
+Special thanks to the Maatify.dev engineering team and all open-source contributors.
+Your efforts help make this library stable, secure, and production-ready.
+
+Before opening a Pull Request, please read:
+
+* [Contributing Guide](CONTRIBUTING.md)
+* [Code of Conduct](CODE_OF_CONDUCT.md)
+
+---
+
+<p align="center">
+  <sub>Built with ❤️ by <a href="https://www.maatify.dev">Maatify.dev</a> — Unified Ecosystem for Modern PHP Libraries</sub>
+</p>

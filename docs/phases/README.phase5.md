@@ -1,5 +1,8 @@
 # 🧩 Phase 5 — Exponential Backoff & Global Limit
 
+[![Maatify Rate Limiter](https://img.shields.io/badge/Maatify-Rate--Limiter-blue?style=for-the-badge)](https://github.com/Maatify/rate-limiter)
+[![Maatify Ecosystem](https://img.shields.io/badge/Maatify-Ecosystem-9C27B0?style=for-the-badge)](https://github.com/Maatify)
+
 ## 🎯 Objective
 
 This phase introduces **adaptive rate-limiting** with an **exponential backoff algorithm** and a **global per-IP limit** shared across all actions.
@@ -21,7 +24,7 @@ private function calculateBackoff(int $attempts, int $base = 2, int $max = 3600)
 ```
 
 | Attempts | Delay (sec) |
-| -------- | ----------- |
+|----------|-------------|
 | 1        | 2           |
 | 2        | 4           |
 | 3        | 8           |
@@ -93,9 +96,9 @@ BACKOFF_MAX=3600
 ### 5️⃣ DTO Enhancements — `RateLimitStatusDTO`
 
 | Field            | Type          | Description                         |
-| ---------------- | ------------- | ----------------------------------- |
-| `backoffSeconds` | int | null    | Adaptive delay duration (seconds)   |
-| `nextAllowedAt`  | string | null | UTC timestamp when retry is allowed |
+|------------------|---------------|-------------------------------------|
+| `backoffSeconds` | int / null    | Adaptive delay duration (seconds)   |
+| `nextAllowedAt`  | string / null | UTC timestamp when retry is allowed |
 
 Added helper:
 
@@ -193,7 +196,7 @@ try {
 ## 🧱 Summary of Enhancements
 
 | Component          | Status | Description                             |
-| ------------------ | ------ | --------------------------------------- |
+|--------------------|--------|-----------------------------------------|
 | DTO update         | ✅      | Added `backoffSeconds`, `nextAllowedAt` |
 | Backoff logic      | ✅      | Exponential algorithm + Redis support   |
 | Global IP limiter  | ✅      | Cross-action limit layer                |

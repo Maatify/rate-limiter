@@ -1,5 +1,8 @@
 # 🧩 Phase 4 – Resolver & Middleware Integration
 
+[![Maatify Rate Limiter](https://img.shields.io/badge/Maatify-Rate--Limiter-blue?style=for-the-badge)](https://github.com/Maatify/rate-limiter)
+[![Maatify Ecosystem](https://img.shields.io/badge/Maatify-Ecosystem-9C27B0?style=for-the-badge)](https://github.com/Maatify)
+
 **Goal:**  
 Introduce a dynamic driver resolver and PSR-15–compliant middleware  
 for automatic rate limiting across HTTP-based applications.

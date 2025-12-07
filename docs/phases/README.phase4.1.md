@@ -1,5 +1,8 @@
 # 🧩 Phase 4.1 – Continuous Integration (Docker + GitHub Actions)
 
+[![Maatify Rate Limiter](https://img.shields.io/badge/Maatify-Rate--Limiter-blue?style=for-the-badge)](https://github.com/Maatify/rate-limiter)
+[![Maatify Ecosystem](https://img.shields.io/badge/Maatify-Ecosystem-9C27B0?style=for-the-badge)](https://github.com/Maatify)
+
 ## 📘 Overview
 
 This phase introduces a **fully automated Continuous Integration (CI)** environment for the **Maatify Rate Limiter** library.

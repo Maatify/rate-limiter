@@ -1,5 +1,8 @@
 # 🧩 Phase 2 – Core Architecture
 
+[![Maatify Rate Limiter](https://img.shields.io/badge/Maatify-Rate--Limiter-blue?style=for-the-badge)](https://github.com/Maatify/rate-limiter)
+[![Maatify Ecosystem](https://img.shields.io/badge/Maatify-Ecosystem-9C27B0?style=for-the-badge)](https://github.com/Maatify)
+
 **Goal:**  
 Define the foundational structure of the Maatify Rate Limiter library,  
 including interfaces, DTOs, enums, and configuration classes.
