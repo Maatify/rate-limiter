@@ -252,3 +252,47 @@ jobs:
             "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
           -H "Content-Type: application/json" \
           -d "$(jq -n --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$MSG" --arg pm "HTML" '{chat_id: $chat_id, text: $text, parse_mode: $pm}')"
+          
+            # ---------------------------------------------
+      # 11) Generate coverage.json for Badge
+      # ---------------------------------------------
+      - name: 🏷️ Generate Coverage Badge JSON
+        if: always()
+        run: |
+          COV=${{ steps.coverage.outputs.coverage }}
+
+          COLOR="red"
+          if [ "$COV" -ge 90 ]; then COLOR="brightgreen";
+          elif [ "$COV" -ge 80 ]; then COLOR="green";
+          elif [ "$COV" -ge 70 ]; then COLOR="yellowgreen";
+          elif [ "$COV" -ge 60 ]; then COLOR="yellow";
+          elif [ "$COV" -ge 50 ]; then COLOR="orange";
+          fi
+
+          cat > coverage.json <<EOF
+          {
+            "schemaVersion": 1,
+            "label": "coverage",
+            "message": "${COV}%",
+            "color": "$COLOR"
+          }
+          EOF
+          
+            # ---------------------------------------------
+      # 12) Commit & Push Coverage Badge
+      # ---------------------------------------------
+      - name: 🚀 Push Coverage Badge to badges Branch
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git fetch origin badges
+          git checkout badges
+
+          mv coverage.json ./coverage.json
+
+          git add coverage.json
+          git commit -m "chore: update coverage badge [skip ci]" || echo "No changes"
+          git push origin badges
+
