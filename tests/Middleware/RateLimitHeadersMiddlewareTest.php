@@ -72,4 +72,86 @@ final class RateLimitHeadersMiddlewareTest extends TestCase
         $result = $middleware->process($request, $handler);
         $this->assertSame($response, $result);
     }
+
+    public function testProcessExtractsKeyFromHeader(): void
+    {
+        $limiter = $this->createMock(RateLimiterInterface::class);
+        $request = $this->createMock(ServerRequestInterface::class);
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
+
+        // Header present
+        $request->method('getHeaderLine')->with('X-Client-IP')->willReturn('1.2.3.4');
+        $limiter->expects($this->once())
+            ->method('attempt')
+            ->with('1.2.3.4', $this->anything(), $this->anything())
+            ->willReturn(new RateLimitStatusDTO(10, 9, 60));
+
+        $handler->method('handle')->willReturn($response);
+
+        $middleware = new RateLimitHeadersMiddleware(
+            $limiter,
+            RateLimitActionEnum::LOGIN,
+            PlatformEnum::WEB,
+            'X-Client-IP'
+        );
+
+        $middleware->process($request, $handler);
+    }
+
+    public function testProcessExtractsKeyFromRemoteAddrWhenHeaderEmpty(): void
+    {
+        $limiter = $this->createMock(RateLimiterInterface::class);
+        $request = $this->createMock(ServerRequestInterface::class);
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
+
+        // Header empty, use REMOTE_ADDR
+        $request->method('getHeaderLine')->willReturn('');
+        $request->method('getServerParams')->willReturn(['REMOTE_ADDR' => '5.6.7.8']);
+
+        $limiter->expects($this->once())
+            ->method('attempt')
+            ->with('5.6.7.8', $this->anything(), $this->anything())
+            ->willReturn(new RateLimitStatusDTO(10, 9, 60));
+
+        $handler->method('handle')->willReturn($response);
+
+        $middleware = new RateLimitHeadersMiddleware(
+            $limiter,
+            RateLimitActionEnum::LOGIN,
+            PlatformEnum::WEB,
+            'X-Client-IP'
+        );
+
+        $middleware->process($request, $handler);
+    }
+
+    public function testProcessHandlesMissingRemoteAddr(): void
+    {
+        $limiter = $this->createMock(RateLimiterInterface::class);
+        $request = $this->createMock(ServerRequestInterface::class);
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
+
+        // Header empty, REMOTE_ADDR missing
+        $request->method('getHeaderLine')->willReturn('');
+        $request->method('getServerParams')->willReturn([]);
+
+        $limiter->expects($this->once())
+            ->method('attempt')
+            ->with('unknown', $this->anything(), $this->anything())
+            ->willReturn(new RateLimitStatusDTO(10, 9, 60));
+
+        $handler->method('handle')->willReturn($response);
+
+        $middleware = new RateLimitHeadersMiddleware(
+            $limiter,
+            RateLimitActionEnum::LOGIN,
+            PlatformEnum::WEB,
+            'X-Client-IP'
+        );
+
+        $middleware->process($request, $handler);
+    }
 }

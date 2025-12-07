@@ -69,4 +69,46 @@ final class RedisRateLimiterTest extends TestCase
         $this->assertInstanceOf(RateLimitStatusDTO::class, $status);
         $this->assertEquals(30, $status->resetAfter);
     }
+
+    public function testStatusHandlesNonNumericValue(): void
+    {
+        $redis = $this->createMock(Redis::class);
+        $limiter = new RedisRateLimiter($redis);
+
+        $redis->method('get')->willReturn('invalid');
+        $redis->method('ttl')->willReturn(30);
+
+        $status = $limiter->status('user123', RateLimitActionEnum::LOGIN, PlatformEnum::WEB);
+
+        // Count defaults to 0. Limit 5. Remaining 5.
+        $this->assertEquals(5, $status->remaining);
+    }
+
+    public function testCalculateBackoffLogic(): void
+    {
+        $redis = $this->createMock(Redis::class);
+        $limiter = new RedisRateLimiter($redis);
+
+        $reflection = new \ReflectionClass($limiter);
+        $method = $reflection->getMethod('calculateBackoff');
+        $method->setAccessible(true);
+
+        $backoff = $method->invoke($limiter, 3, 2, 3600);
+        $this->assertEquals(8, $backoff);
+    }
+
+    public function testApplyBackoffLogic(): void
+    {
+        $redis = $this->createMock(Redis::class);
+        $limiter = new RedisRateLimiter($redis);
+
+        $redis->expects($this->once())->method('expire')->with($this->anything(), 8);
+
+        $reflection = new \ReflectionClass($limiter);
+        $method = $reflection->getMethod('applyBackoff');
+        $method->setAccessible(true);
+
+        $status = $method->invoke($limiter, 'user123', 3);
+        $this->assertEquals(8, $status->backoffSeconds);
+    }
 }
