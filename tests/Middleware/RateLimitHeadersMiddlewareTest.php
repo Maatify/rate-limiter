@@ -89,6 +89,9 @@ final class RateLimitHeadersMiddlewareTest extends TestCase
 
         $handler->method('handle')->willReturn($response);
 
+        // Expect Headers to be added (ensures return value is ResponseInterface)
+        $response->expects($this->exactly(3))->method('withHeader')->willReturnSelf();
+
         $middleware = new RateLimitHeadersMiddleware(
             $limiter,
             RateLimitActionEnum::LOGIN,
@@ -117,6 +120,9 @@ final class RateLimitHeadersMiddlewareTest extends TestCase
 
         $handler->method('handle')->willReturn($response);
 
+        // Expect Headers to be added (ensures return value is ResponseInterface)
+        $response->expects($this->exactly(3))->method('withHeader')->willReturnSelf();
+
         $middleware = new RateLimitHeadersMiddleware(
             $limiter,
             RateLimitActionEnum::LOGIN,
@@ -144,6 +150,9 @@ final class RateLimitHeadersMiddlewareTest extends TestCase
             ->willReturn(new RateLimitStatusDTO(10, 9, 60));
 
         $handler->method('handle')->willReturn($response);
+
+        // Expect Headers to be added (ensures return value is ResponseInterface)
+        $response->expects($this->exactly(3))->method('withHeader')->willReturnSelf();
 
         $middleware = new RateLimitHeadersMiddleware(
             $limiter,
