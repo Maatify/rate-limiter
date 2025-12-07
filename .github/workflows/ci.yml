@@ -154,15 +154,38 @@ jobs:
       # ---------------------------------------------
       # 8) Extract Coverage
       # ---------------------------------------------
-      - name: 📊 Extract Coverage
+      - name: Extract Coverage % (Clover)
         id: coverage
         run: |
+          if [ ! -f coverage.xml ]; then
+            echo "coverage=0" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           COV=$(php -r '
             $xml=@simplexml_load_file("coverage.xml");
-            $m=$xml->project->metrics ?? null;
-            if(!$m){ echo "0"; exit; }
-            echo (int)round(((int)$m["coveredstatements"] / (int)$m["statements"]) * 100);
+            if(!$xml){ echo "0"; exit; }
+
+            // Prefer project/metrics
+            $m = $xml->project->metrics ?? null;
+
+            // Fallback: sum all metrics nodes
+            if(!$m){
+              $statements=0; $covered=0;
+              foreach($xml->xpath("//metrics") ?: [] as $mx){
+                $statements += (int)$mx["statements"];
+                $covered    += (int)$mx["coveredstatements"];
+              }
+              echo $statements>0 ? (int)round(($covered/$statements)*100) : 0;
+              exit;
+            }
+
+            $statements=(int)$m["statements"];
+            $covered=(int)$m["coveredstatements"];
+            echo $statements>0 ? (int)round(($covered/$statements)*100) : 0;
           ')
+
+          echo "Coverage: ${COV}%"
           echo "coverage=${COV}" >> $GITHUB_OUTPUT
 
       # ---------------------------------------------
