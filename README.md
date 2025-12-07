@@ -21,7 +21,7 @@
 [![Code Quality](https://img.shields.io/codefactor/grade/github/Maatify/rate-limiter/main?color=brightgreen)](https://www.codefactor.io/repository/github/Maatify/rate-limiter)
 
 ![PHPStan](https://img.shields.io/badge/PHPStan-Level%20Max-4E8CAE)
-![Coverage](https://img.shields.io/badge/Coverage-95%25-success)
+![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Maatify/rate-limiter/badges/coverage.json)
 
 [![Changelog](https://img.shields.io/badge/Changelog-View-blue)](CHANGELOG.md)
 [![Security](https://img.shields.io/badge/Security-Policy-important)](SECURITY.md)
