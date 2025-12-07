@@ -287,12 +287,14 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
+          # ✅ احذف الملف المؤقت قبل تغيير الفرع (عشان نتجنب الخطأ)
+          rm -f coverage.json
+
           git fetch origin badges
           git checkout badges
-
-          mv coverage.json ./coverage.json
 
           git add coverage.json
           git commit -m "chore: update coverage badge [skip ci]" || echo "No changes"
           git push origin badges
+
 
