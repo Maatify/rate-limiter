@@ -1,7 +1,7 @@
 {
-  "roadmap_version": "1.0.0",
+  "roadmap_version": "1.0.2",
   "project": "maatify/rate-limiter",
-  "note": "Official roadmap rebuilt according to the new unified Maatify Roadmap Schema after promoting the project to version 1.0.0-alpha-phase5.",
+  "note": "Roadmap updated to insert a dedicated API Freeze & Stability Lock phase before all observability, logging, and admin features. This guarantees long-term backward compatibility starting from version 1.1.0.",
   "phases": [
     {
       "id": "phase1",
@@ -83,9 +83,7 @@
         "MongoRateLimiter.php",
         "MySQLRateLimiter.php"
       ],
-      "depends_on": [
-        "phase2"
-      ],
+      "depends_on": ["phase2"],
       "architecture": [
         "Driver-per-storage strategy",
         "TTL-based window enforcement"
@@ -96,7 +94,7 @@
       "title": "Resolver & Enum Contracts Refactor",
       "version": "0.4.0",
       "status": "completed",
-      "summary": "Dynamic driver resolution with interface-based enums.",
+      "summary": "Dynamic driver resolution with interface-based enums and PSR middleware support.",
       "tasks": [
         "Add RateLimitActionInterface and PlatformInterface",
         "Update enums to implement contracts",
@@ -114,9 +112,7 @@
         "RateLimitHeadersMiddleware.php",
         "Enum contract interfaces"
       ],
-      "depends_on": [
-        "phase3"
-      ],
+      "depends_on": ["phase3"],
       "architecture": [
         "Open/Closed enum design",
         "Resolver-based driver routing"
@@ -145,9 +141,7 @@
         "Enhanced RateLimitStatusDTO",
         "Updated TooManyRequestsException"
       ],
-      "depends_on": [
-        "phase4"
-      ],
+      "depends_on": ["phase4"],
       "architecture": [
         "Adaptive delay escalation",
         "Global limiter overlay"
@@ -155,110 +149,217 @@
     },
     {
       "id": "phase6",
-      "title": "Alerting & Logging",
+      "title": "API Freeze & Stability Lock",
       "version": "1.1.0",
       "status": "pending",
-      "summary": "Security logging and alert delivery on rate violations.",
+      "summary": "Full audit and permanent freeze of all public core APIs to guarantee long-term backward compatibility.",
       "tasks": [
-        "Integrate PSR-3 logger",
-        "Implement RateLimiterEventHandler",
-        "Configure Telegram & Email alerts",
-        "Design /logs/security/rate_limit structure"
+        "Audit RateLimiterInterface methods",
+        "Audit attempt() and status() signatures",
+        "Audit RateLimitStatusDTO structure",
+        "Audit TooManyRequestsException contract",
+        "Audit Resolver public behavior",
+        "Lock public method signatures",
+        "Generate final api-map.json",
+        "Generate api-freeze-report.md",
+        "Mark Core API as Frozen in README"
       ],
-      "tests": [],
       "outputs": [
-        "RateLimiterEventHandler.php",
-        "Security log files",
-        "Telegram alert adapter"
+        "Final frozen api-map.json",
+        "api-freeze-report.md",
+        "Frozen core API declaration in README"
       ],
-      "depends_on": [
-        "phase5"
-      ]
+      "depends_on": ["phase5"]
     },
     {
       "id": "phase7",
-      "title": "Monitoring & Observability",
+      "title": "Core Logging Layer",
       "version": "1.2.0",
       "status": "pending",
-      "summary": "Expose metrics, health checks, and operational telemetry.",
+      "summary": "Introduce internal structured logging for all rate limit operations using PSR-3 without any external integrations.",
       "tasks": [
-        "Expose /admin/rate-limit/health endpoint",
-        "Expose /admin/rate-limit/stats endpoint",
-        "Expose /admin/rate-limit/metrics (Prometheus)",
-        "Enable Grafana integration"
+        "Integrate PSR-3 LoggerInterface into RateLimiter core",
+        "Log rate_limit_hit events",
+        "Log rate_limit_block events",
+        "Log backoff_triggered events",
+        "Implement JSON structured log formatter",
+        "Add configurable log levels via .env"
       ],
-      "tests": [],
+      "tests": [
+        "LoggerInjectionTest",
+        "StructuredLogFormatTest"
+      ],
       "outputs": [
-        "Metrics endpoint",
-        "Grafana dashboard"
+        "Internal logging system",
+        "Structured JSON logs for rate-limit activity"
       ],
-      "depends_on": [
-        "phase6"
+      "depends_on": ["phase6"],
+      "architecture": [
+        "Pure infrastructure logging",
+        "No external side effects",
+        "PSR-3 compliant"
       ]
     },
     {
       "id": "phase8",
-      "title": "Reset Service & Admin Dashboard",
+      "title": "Domain Event System",
       "version": "1.3.0",
       "status": "pending",
-      "summary": "Admin control UI and reset services.",
+      "summary": "Introduce domain-level events to decouple rate limiter core logic from any external integrations.",
       "tasks": [
-        "Implement resetAll() in all drivers",
-        "Add REST endpoint /admin/rate-limit/reset",
-        "Develop RateLimiterDashboard.php",
-        "Add Reset / Block / Unblock actions"
+        "Create RateLimiterEvent base class",
+        "Create HitEvent, BlockEvent, ResetEvent, BackoffEvent",
+        "Implement synchronous EventDispatcher",
+        "Dispatch events from Core after logging",
+        "Allow multiple subscribers per event"
       ],
-      "tests": [],
+      "tests": [
+        "EventDispatchTest",
+        "MultipleSubscriberTest"
+      ],
       "outputs": [
-        "Admin reset API",
-        "Dashboard UI"
+        "Domain event system",
+        "Event dispatcher",
+        "Event base contracts"
       ],
-      "depends_on": [
-        "phase7"
+      "depends_on": ["phase7"],
+      "architecture": [
+        "Domain Events Pattern",
+        "Decoupled Core Logic",
+        "Subscriber-based propagation"
       ]
     },
     {
       "id": "phase9",
-      "title": "Unit Tests & QA",
+      "title": "Alerts & External Integrations",
       "version": "1.4.0",
       "status": "pending",
-      "summary": "Stress testing, performance profiling, and QA hardening.",
+      "summary": "Deliver rate limit events to external systems such as Telegram and Email through decoupled adapters.",
       "tasks": [
-        "Achieve coverage > 80%",
-        "Load test Redis under 5k req/sec",
-        "Test Mongo & MySQL consistency",
-        "Simulate real user actions"
+        "Implement TelegramAlertAdapter",
+        "Implement EmailAlertAdapter",
+        "Create RateLimitAlertSubscriber",
+        "Attach subscriber to event dispatcher",
+        "Implement throttling for outgoing alerts",
+        "Add .env config for alert channels"
       ],
-      "tests": [],
+      "tests": [
+        "TelegramAlertAdapterTest",
+        "EmailAlertAdapterTest",
+        "AlertThrottlingTest"
+      ],
       "outputs": [
-        "Performance reports",
-        "Final QA report"
+        "Telegram alert integration",
+        "Email alert integration",
+        "Alert subscriber system"
       ],
-      "depends_on": [
-        "phase8"
+      "depends_on": ["phase8"],
+      "architecture": [
+        "Adapter pattern",
+        "Event subscriber model",
+        "External integration isolation"
       ]
     },
     {
       "id": "phase10",
-      "title": "Documentation & Public Release",
+      "title": "Monitoring & Observability",
       "version": "1.5.0",
       "status": "pending",
-      "summary": "Final documentation, tagging, and Packagist publishing.",
+      "summary": "Expose health, statistics, and Prometheus-compatible metrics for operational visibility.",
       "tasks": [
-        "Finalize README.md and CONTRIBUTING.md",
+        "Expose /admin/rate-limit/health endpoint",
+        "Expose /admin/rate-limit/stats endpoint",
+        "Expose /admin/rate-limit/metrics (Prometheus)",
+        "Add internal metrics counters for hit/block/backoff/reset",
+        "Enable Grafana dashboard integration"
+      ],
+      "tests": [
+        "HealthEndpointTest",
+        "MetricsEndpointTest"
+      ],
+      "outputs": [
+        "Prometheus metrics endpoint",
+        "Grafana dashboard"
+      ],
+      "depends_on": ["phase9"],
+      "architecture": [
+        "Pull-based metrics model",
+        "Observability-first design"
+      ]
+    },
+    {
+      "id": "phase11",
+      "title": "Reset Service & Admin Dashboard",
+      "version": "1.6.0",
+      "status": "pending",
+      "summary": "Administrative control panel and reset services for live system management.",
+      "tasks": [
+        "Implement resetAll() in all drivers",
+        "Implement resetByIp() in all drivers",
+        "Add REST endpoint /admin/rate-limit/reset",
+        "Develop RateLimiterDashboard.php",
+        "Add Reset / Block / Unblock actions",
+        "Add audit logging for admin actions"
+      ],
+      "tests": [
+        "AdminResetApiTest",
+        "AuditLogTest"
+      ],
+      "outputs": [
+        "Admin Reset API",
+        "Dashboard UI",
+        "Audit logs"
+      ],
+      "depends_on": ["phase10"],
+      "architecture": [
+        "Service-based reset design",
+        "Admin boundary isolation"
+      ]
+    },
+    {
+      "id": "phase12",
+      "title": "Stress Testing & Quality Assurance",
+      "version": "1.7.0",
+      "status": "pending",
+      "summary": "High-load testing, memory profiling, and production hardening.",
+      "tasks": [
+        "Achieve PHPUnit coverage > 85%",
+        "Stress test Redis under 10k req/sec",
+        "Stress test Mongo & MySQL consistency",
+        "Memory leak detection",
+        "CPU profiling under burst traffic"
+      ],
+      "tests": [
+        "HighLoadRateTest",
+        "MemoryLeakTest"
+      ],
+      "outputs": [
+        "Stress test reports",
+        "Performance benchmarks",
+        "Stability certification"
+      ],
+      "depends_on": ["phase11"]
+    },
+    {
+      "id": "phase13",
+      "title": "Public Documentation & Stable Release",
+      "version": "1.8.0",
+      "status": "pending",
+      "summary": "Finalize documentation, tag stable release, and publish to Packagist.",
+      "tasks": [
+        "Finalize README.md",
+        "Finalize CONTRIBUTING.md",
         "Finalize CHANGELOG.md",
-        "Create GitHub Wiki or Pages",
-        "Tag release v1.0.0",
+        "Create GitHub Pages / Wiki",
+        "Tag stable release v1.0.0",
         "Publish on Packagist"
       ],
       "tests": [],
       "outputs": [
         "Public documentation",
-        "Packagist package"
+        "Stable Packagist release"
       ],
-      "depends_on": [
-        "phase9"
-      ]
+      "depends_on": ["phase12"]
     }
   ]
 }

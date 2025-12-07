@@ -1,45 +1,37 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "engine_version": "1.0.0",
-
   "project": {
-    "name": "maatify/data-repository",
-    "slug": "maatify/data-repository",
-    "version": "1.0.0",
+    "name": "maatify/rate-limiter",
+    "slug": "maatify/rate-limiter",
+    "version": "1.0.0-alpha-phase5",
     "owner": "Maatify.dev",
-    "description": "Unified repository abstraction layer normalizing MySQL, MongoDB, and Redis real drivers and fake drivers. Integrates with maatify/data-adapters, maatify/data-fakes, maatify/common, maatify/psr-logger, and maatify/bootstrap."
+    "description": "High-performance, multi-driver rate limiting library supporting Redis, MongoDB, and MySQL with exponential backoff, global IP limits, and PSR middleware integration. Designed for enterprise-grade API protection and future integration with Maatify data-adapters and data-fakes."
   },
-
   "tests_policy": {
     "unit": "Deterministic fake tests",
     "integration": "Real driver tests",
     "require_fake": true,
     "require_real": true
   },
-
   "quality": {
     "testing": "PHPUnit",
     "coverage": ">= 85%",
     "coding_standard": "PSR-12",
     "static_analysis": "phpstan level 6"
   },
-
   "documentation_policy": {
     "per_phase_readme": true,
     "phase_readme_format": "README.phase{ID}.md",
-
     "update_full_readme_per_phase": false,
     "update_full_readme_per_version": true,
     "full_readme_file": "README.full.md",
-
     "api_map_mode": "append_only"
   },
-
   "phase_output_policy": {
     "required": true,
     "file": "phase-output.json",
     "generated_after_each_phase": true,
-
     "contains": [
       "phase metadata",
       "summary",
@@ -50,9 +42,7 @@
       "commit metadata",
       "git patch file"
     ],
-
     "signature_schema_version": "2.0",
-
     "include_reflection": true,
     "reflection_details": {
       "only_modified_classes": true,
@@ -62,25 +52,28 @@
       "method_visibility": true,
       "method_exceptions": true
     },
-
     "generate_git_patch": true,
     "git_patch_filename": "phase{ID}.patch",
     "git_patch_format": "unified",
     "git_patch_include_metadata": true,
-
     "default_outputs": [
       "README.phase{ID}.md",
       "phase-output.json",
       "phase{ID}.patch"
     ]
   },
-
   "commit_policy": {
     "conventional_commits": true,
     "auto_generate": true,
-    "types": ["feat", "fix", "refactor", "docs", "test", "chore"]
+    "types": [
+      "feat",
+      "fix",
+      "refactor",
+      "docs",
+      "test",
+      "chore"
+    ]
   },
-
   "release_policy": {
     "auto_tag": true,
     "tag_format": "v{version}",
@@ -88,20 +81,17 @@
     "append_changelog": true,
     "publish_to_packagist": true
   },
-
   "changelog_policy": {
     "auto_update": true,
     "file": "CHANGELOG.md",
     "format": "keep-a-changelog"
   },
-
   "validation_rules": {
     "require_phases": true,
     "require_unique_ids": true,
     "validate_version_format": true,
     "validate_phase_outputs": true
   },
-
   "phase_execution_rules": {
     "enforce_order": true,
     "require_completion_of_previous": true,
@@ -109,7 +99,6 @@
     "block_if_phpstan_errors": true,
     "block_if_format_errors": true
   },
-
   "repository_structure": {
     "src": "src/",
     "tests": "tests/",
@@ -117,14 +106,12 @@
     "output": "build/",
     "examples": "examples/"
   },
-
   "ci_pipeline": {
     "run_phpstan": true,
     "run_phpunit": true,
     "min_coverage": 85,
     "run_formatter": true
   },
-
   "code_generation_policy": {
     "phpstan_compliant": true,
     "phpstan_level": 6,
@@ -135,13 +122,11 @@
     "strict_docblocks": true,
     "auto_import_namespaces": true
   },
-
   "examples_policy": {
     "required": true,
     "path": "examples/phase{ID}/",
     "generate_after_each_phase": true
   },
-
   "file_header_policy": {
     "enabled": true,
     "header_template": [

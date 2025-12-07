@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "file_version": "1.0.0",
+  "project": "maatify/rate-limiter",
+  "scope": "post-v1.x",
+  "note": "This file defines all future enhancements that are intentionally excluded from the v1.x roadmap to preserve core stability. These items are planned for v2.0+ and experimental releases.",
+  "enhancements": [
+    {
+      "id": "v2-adapter-integration",
+      "title": "Data Adapters Integration (v2.0)",
+      "category": "infrastructure",
+      "target_version": "2.0.0",
+      "priority": "high",
+      "status": "planned",
+      "description": "Integrate maatify/data-adapters as a bridge layer to enable unified Redis, MongoDB, and MySQL connections with support for fake adapters in testing environments.",
+      "goals": [
+        "Support RedisAdapterInterface, MongoAdapterInterface, MySQLAdapterInterface",
+        "Enable FakeAdapters for deterministic stress testing",
+        "Allow environment-based adapter switching (prod vs testing)",
+        "Unify connection pooling and lifecycle management"
+      ],
+      "non_goals": [
+        "No direct dependency on data-repository",
+        "No CRUD abstraction",
+        "No pagination, filtering, or hydration"
+      ],
+      "risks": [
+        "Potential constructor signature changes",
+        "Increased dependency surface",
+        "Performance regression if not carefully isolated"
+      ]
+    },
+    {
+      "id": "behavioral-ai",
+      "title": "User Behavioral AI",
+      "category": "security-ai",
+      "target_version": "2.1.0",
+      "priority": "medium",
+      "status": "planned",
+      "description": "Analyze user behavior patterns to detect anomalies and predict abusive traffic before rate limits are exceeded.",
+      "goals": [
+        "Profile request frequency patterns",
+        "Detect abnormal burst behavior",
+        "Flag suspicious clients for pre-emptive throttling"
+      ],
+      "risks": [
+        "False positives",
+        "Increased CPU usage",
+        "Model drift over time"
+      ]
+    },
+    {
+      "id": "adaptive-rate-limits",
+      "title": "Adaptive Rate Limits",
+      "category": "dynamic-policy",
+      "target_version": "2.2.0",
+      "priority": "medium",
+      "status": "planned",
+      "description": "Dynamically adjust rate limits based on user trust score, account age, role, and risk profile.",
+      "goals": [
+        "Per-user dynamic limits",
+        "Trust score-based throttling",
+        "Role-based limit overrides (admin, api, guest)"
+      ],
+      "risks": [
+        "Policy misconfiguration",
+        "Unexpected privilege escalation",
+        "Complex debugging"
+      ]
+    },
+    {
+      "id": "distributed-sync",
+      "title": "Distributed Sync (Multi-Node)",
+      "category": "distributed-systems",
+      "target_version": "2.3.0",
+      "priority": "high",
+      "status": "planned",
+      "description": "Synchronize Redis rate counters across multiple servers using Pub/Sub or Streams for horizontally scaled systems.",
+      "goals": [
+        "Cross-node rate enforcement",
+        "Pub/Sub-based counter propagation",
+        "Failover-safe global limits"
+      ],
+      "risks": [
+        "Message storm under high traffic",
+        "Replication lag",
+        "Event ordering issues"
+      ]
+    },
+    {
+      "id": "custom-policies",
+      "title": "Custom Policies",
+      "category": "configuration",
+      "target_version": "2.4.0",
+      "priority": "medium",
+      "status": "planned",
+      "description": "Allow custom per-route, per-method, and per-role rate limiting configurations.",
+      "goals": [
+        "Per-route rate rules",
+        "Per-HTTP-method policies",
+        "Per-role overrides",
+        "Policy priority resolution"
+      ],
+      "risks": [
+        "Policy conflicts",
+        "Configuration bloat",
+        "Unexpected precedence issues"
+      ]
+    }
+  ],
+  "governance": {
+    "breaking_changes_allowed": true,
+    "requires_major_version_bump": true,
+    "experimental_features_allowed": true,
+    "stability_guarantee": "None for v2.x experimental features"
+  }
+}
