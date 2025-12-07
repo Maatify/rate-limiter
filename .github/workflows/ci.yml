@@ -248,7 +248,14 @@ jobs:
           echo "🧹 PHPStan: ${{ steps.phpstan.outputs.phpstan_errors }} errors" >> $GITHUB_STEP_SUMMARY
           echo "📊 Coverage: ${{ steps.coverage.outputs.coverage }}%" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          tail -n 20 phpunit.log >> $GITHUB_STEP_SUMMARY
+
+          if [ -f phpunit.log ]; then
+            tail -n 20 phpunit.log >> $GITHUB_STEP_SUMMARY
+          elif [ -f /tmp/phpunit.log ]; then
+            tail -n 20 /tmp/phpunit.log >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ phpunit.log not found — PHPUnit may have failed before log creation." >> $GITHUB_STEP_SUMMARY
+          fi
 
       # ---------------------------------------------
       # 10) Telegram Notification
