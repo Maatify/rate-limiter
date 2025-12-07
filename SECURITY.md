@@ -1,6 +1,6 @@
 # Security Policy
 
-[![Maatify Repository](https://img.shields.io/badge/Maatify-Repository-blue?style=for-the-badge)](README.md)
+[![Maatify Rate Limiter](https://img.shields.io/badge/Maatify-Rate--Limiter-blue?style=for-the-badge)](https://github.com/Maatify/rate-limiter)
 [![Maatify Ecosystem](https://img.shields.io/badge/Maatify-Ecosystem-9C27B0?style=for-the-badge)](https://github.com/Maatify)
 
 Thank you for taking the time to review the security of **maatify/rate-limiter**.  
