@@ -113,8 +113,8 @@ final class MongoRateLimiter implements RateLimiterInterface
         );
 
         // 📊 Retrieve current record
-        $record = $this->collection->findOne(['_id' => $docKey]);
-        $count = $record['count'] ?? 1;
+        $record = (array)$this->collection->findOne(['_id' => $docKey]);
+        $count = isset($record['count']) && is_numeric($record['count']) ? (int) $record['count'] : 1;
 
         // 🚫 Throw if limit exceeded
         if ($count > $config['limit']) {
@@ -180,8 +180,8 @@ final class MongoRateLimiter implements RateLimiterInterface
         // 🔹 Retrieve current configuration and document
         $config = RateLimitConfig::get($action->value());
         $docId = "{$platform->value()}_{$action->value()}_{$key}";
-        $record = $this->collection->findOne(['_id' => $docId]);
-        $count = $record['count'] ?? 0;
+        $record = (array)$this->collection->findOne(['_id' => $docId]);
+        $count = isset($record['count']) && is_numeric($record['count']) ? (int) $record['count'] : 0;
 
         // 🧠 Return structured status object
         return new RateLimitStatusDTO(

@@ -102,12 +102,17 @@ final class MySQLRateLimiter implements RateLimiterInterface
             VALUES (:key, 1, NOW())
             ON DUPLICATE KEY UPDATE count = count + 1, last_attempt = NOW()
         ');
-        $stmt->execute(['key' => $key]);
+        if ($stmt) {
+            $stmt->execute(['key' => $key]);
+        }
 
         // 📊 Retrieve current request count
-        $count = (int) $this->pdo
-            ->query("SELECT count FROM ip_rate_limits WHERE key_name = '{$key}'")
-            ->fetchColumn();
+        $stmt = $this->pdo->prepare("SELECT count FROM ip_rate_limits WHERE key_name = ?");
+        $count = 0;
+        if ($stmt) {
+            $stmt->execute([$key]);
+            $count = (int) $stmt->fetchColumn();
+        }
 
         // 🚫 If count exceeds configured limit, block the request
         if ($count > $config['limit']) {
@@ -146,11 +151,14 @@ final class MySQLRateLimiter implements RateLimiterInterface
 
         // 🗑️ Delete record from table
         $stmt = $this->pdo->prepare('DELETE FROM ip_rate_limits WHERE key_name = ?');
-        return $stmt->execute([$key]);
+        if ($stmt) {
+            return $stmt->execute([$key]);
+        }
+        return false;
     }
 
     /**
-     * 🔍 Retrieve current rate-limit status without modifying counters.
+     * 🔍 Retrieve the current rate-limit status without modifying counters.
      *
      * Returns a static snapshot of the rate-limit state (remaining requests, reset interval)
      * without altering or incrementing the counter.
@@ -175,8 +183,11 @@ final class MySQLRateLimiter implements RateLimiterInterface
 
         // 📊 Query for the current counter value
         $stmt = $this->pdo->prepare('SELECT count FROM ip_rate_limits WHERE key_name = ?');
-        $stmt->execute([$key]);
-        $count = (int) $stmt->fetchColumn();
+        $count = 0;
+        if ($stmt) {
+            $stmt->execute([$key]);
+            $count = (int) $stmt->fetchColumn();
+        }
 
         // 🧠 Return a snapshot DTO describing the current rate-limit status
         return new RateLimitStatusDTO(
@@ -215,7 +226,7 @@ final class MySQLRateLimiter implements RateLimiterInterface
      * including `blocked_until` and `backoff_seconds` metadata.
      *
      * @param string $key Unique identifier (e.g., IP, user ID, token).
-     * @param int $attempts Current number of failed or blocked attempts.
+     * @param int $attempts The current number of failed or blocked attempts.
      *
      * @return RateLimitStatusDTO A DTO describing the applied backoff and next allowed time.
      *

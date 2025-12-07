@@ -92,10 +92,16 @@ final class RateLimitHeadersMiddleware implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        // 🔍 Determine unique client key (from header or fallback to IP)
-        $key = $request->getHeaderLine($this->keyHeader)
-            ?: $request->getServerParams()['REMOTE_ADDR']
-               ?? 'unknown';
+        // 🔍 Determine a unique client key (from header or fallback to IP)
+        $key = 'unknown';
+        if ($this->keyHeader !== null) {
+            $key = $request->getHeaderLine($this->keyHeader);
+        }
+
+        if ($key === '' || $key === 'unknown') {
+            $val = $request->getServerParams()['REMOTE_ADDR'] ?? 'unknown';
+            $key = is_string($val) ? $val : 'unknown';
+        }
 
         try {
             // 🧩 Attempt the rate-limited operation
@@ -103,14 +109,20 @@ final class RateLimitHeadersMiddleware implements MiddlewareInterface
         } catch (TooManyRequestsException $e) {
             // 🚫 Over the limit → respond with 429 and relevant headers
             $response = $handler->handle($request);
+            $status = $e->status;
+
+            // Handle potentially null status safely
+            $retryAfter = $status ? $status->retryAfter : 60;
+            $limit = $status ? $status->limit : '';
+
             return $response
                 ->withStatus(429)
-                ->withHeader('Retry-After', (string)($status->retryAfter ?? 60))
-                ->withHeader('X-RateLimit-Limit', (string)($status->limit ?? ''))
+                ->withHeader('Retry-After', (string)$retryAfter)
+                ->withHeader('X-RateLimit-Limit', (string)$limit)
                 ->withHeader('X-RateLimit-Remaining', '0');
         }
 
-        // ✅ Proceed with request handling when within limit
+        // ✅ Proceed with request handling when within the limit
         $response = $handler->handle($request);
 
         // 🧾 Attach rate-limit status headers
