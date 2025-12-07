@@ -140,16 +140,18 @@ jobs:
       - name: Install bc
         run: sudo apt-get install -y bc
 
-      - name: 🧪 Run PHPUnit
-        id: phpunit
+      - name: 🧪 Run PHPUnit with Coverage
+        id: tests
         run: |
+          touch phpunit.log
           php -d pcov.enabled=1 \
             -d pcov.directory=./src \
+            -d pcov.exclude="~(tests|vendor)~" \
             vendor/bin/phpunit \
             --configuration phpunit.xml.dist \
             --coverage-clover coverage.xml \
             --coverage-html coverage \
-            | tee phpunit.log
+            | tee -a phpunit.log
 
       # ---------------------------------------------
       # 8) Extract Coverage
@@ -274,7 +276,7 @@ jobs:
           HEADER="Rate Limiter CI Report"
           COLOR="🟢"
           
-          if grep -q "FAILURES!" phpunit.log || [ "${{ job.status }}" != "success" ]; then
+          if grep -q "FAILURES!" phpunit.log 2>/dev/null || [ "${{ job.status }}" != "success" ]; then
             STATUS="🔴 Tests or PHPStan failed!"
             HEADER="Rate Limiter CI Alert"
             COLOR="🔴"
