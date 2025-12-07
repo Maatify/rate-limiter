@@ -1,0 +1,448 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Maatify Universal Executor Schema",
+  "type": "object",
+
+  "required": [
+    "engine_version",
+    "tests_policy",
+    "documentation_policy",
+    "phase_output_policy",
+    "quality"
+  ],
+
+  "properties": {
+    "project": {
+      "type": "object",
+      "required": ["name", "slug", "version", "owner", "description"],
+      "properties": {
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "owner": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "engine_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+
+    "tests_policy": {
+      "type": "object",
+      "required": ["require_fake", "require_real"],
+      "properties": {
+        "unit": { "type": "string" },
+        "integration": { "type": "string" },
+        "require_fake": { "type": "boolean" },
+        "require_real": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "quality": {
+      "type": "object",
+      "properties": {
+        "testing": { "type": "string" },
+        "coverage": { "type": "string" },
+        "coding_standard": { "type": "string" },
+        "static_analysis": { "type": "string" },
+        "uses_common": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "documentation_policy": {
+      "type": "object",
+      "required": ["per_phase_readme", "full_readme_file"],
+      "properties": {
+        "per_phase_readme": { "type": "boolean" },
+        "phase_readme_format": { "type": "string" },
+        "update_full_readme_per_phase": { "type": "boolean" },
+        "update_full_readme_per_version": { "type": "boolean" },
+        "full_readme_file": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "phase_output_policy": {
+      "type": "object",
+      "required": ["required", "file", "contains"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "file": { "type": "string" },
+        "generated_after_each_phase": { "type": "boolean" },
+
+        "contains": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+
+        "include_reflection": { "type": "boolean" },
+
+        "reflection_details": {
+          "type": "object",
+          "properties": {
+            "only_modified_classes": { "type": "boolean" },
+            "include_methods": { "type": "boolean" },
+            "method_arguments": { "type": "boolean" },
+            "method_return_types": { "type": "boolean" },
+            "method_visibility": { "type": "boolean" },
+            "method_exceptions": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+
+        "signature_schema_version": { "type": "string" },
+        "generate_git_patch": { "type": "boolean" },
+        "git_patch_filename": { "type": "string" },
+        "git_patch_format": { "type": "string" },
+        "git_patch_include_metadata": { "type": "boolean" },
+
+        "auto_fill_missing_outputs": { "type": "boolean" },
+
+        "default_outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "commit_policy": {
+      "type": "object",
+      "properties": {
+        "conventional_commits": { "type": "boolean" },
+        "auto_generate": { "type": "boolean" },
+        "types": { "type": "array", "items": { "type": "string" }},
+        "breaking_change_flag": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "release_policy": {
+      "type": "object",
+      "properties": {
+        "auto_tag": { "type": "boolean" },
+        "tag_format": { "type": "string" },
+        "generate_release_notes": { "type": "boolean" },
+        "append_changelog": { "type": "boolean" },
+        "publish_to_packagist": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "changelog_policy": {
+      "type": "object",
+      "properties": {
+        "auto_update": { "type": "boolean" },
+        "file": { "type": "string" },
+        "format": { "type": "string" },
+        "include_phase_links": { "type": "boolean" },
+        "include_reflection_changes": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "validation_rules": {
+      "type": "object",
+      "properties": {
+        "require_phases": { "type": "boolean" },
+        "require_unique_ids": { "type": "boolean" },
+        "validate_version_format": { "type": "boolean" },
+        "validate_tasks": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "phase_execution_rules": {
+      "type": "object",
+      "properties": {
+        "enforce_order": { "type": "boolean" },
+        "require_completion_of_previous": { "type": "boolean" },
+        "block_if_tests_fail": { "type": "boolean" },
+        "block_if_phpstan_errors": { "type": "boolean" },
+        "allow_replay": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "artifact_policy": {
+      "type": "object",
+      "properties": {
+        "required": { "type": "array", "items": { "type": "string" }},
+        "optional": { "type": "array", "items": { "type": "string" }}
+      },
+      "additionalProperties": true
+    },
+
+    "repository_structure": {
+      "type": "object",
+      "properties": {
+        "src": { "type": "string" },
+        "tests": { "type": "string" },
+        "docs": { "type": "string" },
+        "output": { "type": "string" },
+        "examples": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "ci_pipeline": {
+      "type": "object",
+      "properties": {
+        "run_phpstan": { "type": "boolean" },
+        "run_phpunit": { "type": "boolean" },
+        "min_coverage": { "type": "number" },
+        "run_psalm": { "type": "boolean" },
+        "run_formatter": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "code_generation_policy": {
+      "type": "object",
+      "properties": {
+        "phpstan_compliant": { "type": "boolean" },
+        "phpstan_level": { "type": "number" },
+        "forbid_mixed": { "type": "boolean" },
+        "require_return_types": { "type": "boolean" },
+        "require_parameter_types": { "type": "boolean" },
+        "forbid_dynamic_properties": { "type": "boolean" },
+        "forbid_error_suppression": { "type": "boolean" },
+        "strict_docblocks": { "type": "boolean" },
+        "rules": { "type": "array", "items": { "type": "string" }}
+      },
+      "additionalProperties": true
+    },
+
+    "examples_policy": {
+      "type": "object",
+      "properties": {
+        "required": { "type": "boolean" },
+        "path": { "type": "string" },
+        "generate_after_each_phase": { "type": "boolean" },
+        "types": { "type": "array", "items": { "type": "string" }},
+        "format_rules": {
+          "type": "object",
+          "properties": {
+            "require_phpstan_compliance": { "type": "boolean" },
+            "phpstan_clean_required": { "type": "boolean" },
+            "phpstan_level": { "type": "number" },
+            "require_strict_types": { "type": "boolean" },
+            "psr12_format": { "type": "boolean" },
+            "include_comments": { "type": "boolean" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "backward_compatibility": {
+      "type": "object",
+      "properties": {
+        "strict": { "type": "boolean" },
+        "detect_breaking_changes": { "type": "boolean" },
+        "block_phase_if_breaking": { "type": "boolean" },
+        "allowed_in_versions": { "type": "array", "items": { "type": "string" }}
+      },
+      "additionalProperties": true
+    },
+
+    "api_surface_policy": {
+      "type": "object",
+      "properties": {
+        "generate_api_map": { "type": "boolean" },
+        "file": { "type": "string" },
+        "track_modified_only": { "type": "boolean" },
+        "include_removed_signatures": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "performance_policy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "require_profile_on_phase": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "max_query_time_ms": { "type": "number" },
+        "max_memory_mb": { "type": "number" },
+        "profile_fields": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "error_policy": {
+      "type": "object",
+      "properties": {
+        "require_custom_exceptions": { "type": "boolean" },
+        "enforce_error_codes": { "type": "boolean" },
+        "enforce_message_types": { "type": "boolean" },
+        "error_format_schema": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string" },
+            "message": { "type": "string" },
+            "context": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "security_policy": {
+      "type": "object",
+      "properties": {
+        "sanitize_inputs": { "type": "boolean" },
+        "validate_filters": { "type": "boolean" },
+        "validate_sorting": { "type": "boolean" },
+        "prevent_nosql_injection": { "type": "boolean" },
+        "prevent_sql_injection": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "doc_quality_policy": {
+      "type": "object",
+      "properties": {
+        "require_examples": { "type": "boolean" },
+        "require_edge_cases": { "type": "boolean" },
+        "require_error_documentation": { "type": "boolean" },
+        "require_return_types": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "naming_policy": {
+      "type": "object",
+      "properties": {
+        "enforce_dto_suffix": { "type": "boolean" },
+        "enforce_interface_suffix": { "type": "boolean" },
+        "enforce_repository_suffix": { "type": "boolean" },
+        "enforce_enum_suffix": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "telemetry_policy": {
+      "type": "object",
+      "properties": {
+        "enable_phase_telemetry": { "type": "boolean" },
+        "capture_query_time": { "type": "boolean" },
+        "capture_memory_usage": { "type": "boolean" },
+        "capture_adapter_events": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "dependency_policy": {
+      "type": "object",
+      "properties": {
+        "verify_versions": { "type": "boolean" },
+        "lockfile_required": { "type": "boolean" },
+        "block_on_incompatible_versions": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "ai_review_policy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "enforce_phpstan": { "type": "boolean" },
+        "enforce_psr12": { "type": "boolean" },
+        "enforce_reflection_consistency": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+
+    "file_header_policy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "header_template": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "variables": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "roadmap_schema": {
+      "type": "object",
+      "properties": {
+        "required": { "type": "array", "items": { "type": "string" }},
+        "phase_required_fields": { "type": "array", "items": { "type": "string" }}
+      },
+      "additionalProperties": true
+    },
+
+    "project_defaults": {
+      "type": "object",
+      "properties": {
+        "php_version": { "type": "string" },
+        "namespace_root": { "type": "string" },
+        "library_vendor": { "type": "string" },
+        "common_minimum": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "file_naming_policy": {
+      "type": "object",
+      "properties": {
+        "dto": { "type": "string" },
+        "interface": { "type": "string" },
+        "repository": { "type": "string" },
+        "enum": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+
+    "executor_global": {
+      "type": "object",
+      "additionalProperties": true
+    },
+
+    "project_rules": {
+      "type": "object",
+      "additionalProperties": true
+    },
+
+    "repository_rules": {
+      "type": "object",
+      "additionalProperties": true
+    },
+
+    "driver_rules": {
+      "type": "object",
+      "additionalProperties": true
+    },
+
+    "testing_rules": {
+      "type": "object",
+      "additionalProperties": true
+    },
+
+    "normalization_rules": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+
+  "additionalProperties": false
+}

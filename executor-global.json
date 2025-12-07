@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "engine_version": "1.0.0",
+
+  "tests_policy": {
+    "unit": "Deterministic fake tests",
+    "integration": "Real driver tests",
+    "require_fake": true,
+    "require_real": true
+  },
+
+  "quality": {
+    "testing": "PHPUnit",
+    "coverage": ">= 85%",
+    "coding_standard": "PSR-12",
+    "static_analysis": "phpstan level 6"
+  },
+
+  "documentation_policy": {
+    "per_phase_readme": true,
+    "phase_readme_format": "README.phase{ID}.md",
+    "update_full_readme_per_phase": false,
+    "update_full_readme_per_version": true,
+    "full_readme_file": "README.full.md"
+  },
+
+  "phase_output_policy": {
+    "required": true,
+    "file": "phase-output.json",
+    "generated_after_each_phase": true,
+
+    "contains": [
+      "phase metadata",
+      "summary",
+      "changes (added/updated/removed)",
+      "tests result (fake + real)",
+      "coverage",
+      "documentation files created",
+      "commit metadata",
+      "git patch file"
+    ],
+
+    "signature_schema_version": "2.0",
+
+    "include_reflection": true,
+    "reflection_details": {
+      "only_modified_classes": true,
+      "include_methods": true,
+      "method_arguments": true,
+      "method_return_types": true,
+      "method_visibility": true,
+      "method_exceptions": true
+    },
+
+    "generate_git_patch": true,
+    "git_patch_filename": "phase{ID}.patch",
+    "git_patch_format": "unified",
+    "git_patch_include_metadata": true,
+
+    "default_outputs": [
+      "README.phase{ID}.md",
+      "phase-output.json",
+      "phase{ID}.patch"
+    ]
+  },
+
+  "commit_policy": {
+    "conventional_commits": true,
+    "auto_generate": true,
+    "types": ["feat", "fix", "refactor", "docs", "test", "chore"]
+  },
+
+  "release_policy": {
+    "auto_tag": true,
+    "tag_format": "v{version}",
+    "generate_release_notes": true,
+    "append_changelog": true,
+    "publish_to_packagist": true
+  },
+
+  "changelog_policy": {
+    "auto_update": true,
+    "file": "CHANGELOG.md",
+    "format": "keep-a-changelog"
+  },
+
+  "validation_rules": {
+    "require_phases": true,
+    "require_unique_ids": true,
+    "validate_version_format": true
+  },
+
+  "phase_execution_rules": {
+    "enforce_order": true,
+    "require_completion_of_previous": true,
+    "block_if_tests_fail": true,
+    "block_if_phpstan_errors": true
+  },
+
+  "repository_structure": {
+    "src": "src/",
+    "tests": "tests/",
+    "docs": "docs/",
+    "output": "build/",
+    "examples": "examples/"
+  },
+
+  "ci_pipeline": {
+    "run_phpstan": true,
+    "run_phpunit": true,
+    "min_coverage": 85,
+    "run_formatter": true
+  },
+
+  "code_generation_policy": {
+    "phpstan_compliant": true,
+    "phpstan_level": 6,
+    "forbid_mixed": true,
+    "require_return_types": true,
+    "require_parameter_types": true,
+    "forbid_dynamic_properties": true,
+    "strict_docblocks": true
+  },
+
+  "examples_policy": {
+    "required": true,
+    "path": "examples/phase{ID}/",
+    "generate_after_each_phase": true
+  },
+
+  "finalization_policy": {
+    "auto_finalize_checks": true,
+
+    "required_files": [
+      "CHANGELOG.md",
+      "roadmap.json",
+      "docs/README.full.md",
+      "README.md"
+    ],
+
+    "phase_required_outputs": [
+      "docs/phases/README.phase{ID}.md",
+      "api-map.json",
+      "phase-output.json",
+      "examples/phase{ID}/"
+    ],
+
+    "checks": {
+      "validate_phase_readme": true,
+      "validate_api_map": true,
+      "validate_phase_output": true,
+      "validate_examples": true,
+      "validate_changelog": true,
+      "validate_roadmap": true,
+      "validate_full_readme": true,
+      "validate_root_readme": true
+    },
+
+    "block_finalize_if_missing": true,
+    "block_finalize_if_outdated": true,
+
+    "auto_update_missing_sections": true,
+    "auto_generate_missing_files": true
+  },
+
+  "file_header_policy": {
+    "enabled": true,
+    "header_template": [
+      "/**",
+      " * @copyright   ©{YEAR} Maatify.dev",
+      " * @Library     {LIBRARY_SLUG}",
+      " * @Project     maatify:{PROJECT_SLUG}",
+      " * @author      Mohamed Abdulalim (megyptm) <mohamed@maatify.dev>",
+      " * @since       {DATETIME}",
+      " * @see         https://www.maatify.dev Maatify.dev",
+      " * @link        https://github.com/{GITHUB_REPO} view project on GitHub",
+      " * @note        Distributed in the hope that it will be useful - WITHOUT WARRANTY.",
+      " */"
+    ]
+  }
+}

@@ -1,0 +1,264 @@
+{
+  "roadmap_version": "1.0.0",
+  "project": "maatify/rate-limiter",
+  "note": "Official roadmap rebuilt according to the new unified Maatify Roadmap Schema after promoting the project to version 1.0.0-alpha-phase5.",
+  "phases": [
+    {
+      "id": "phase1",
+      "title": "Environment Setup",
+      "version": "0.1.0",
+      "status": "completed",
+      "summary": "Initial project bootstrap, Composer setup, environment variables, and basic CI wiring.",
+      "tasks": [
+        "Create GitHub repository maatify/rate-limiter",
+        "Initialize Composer project and dependencies",
+        "Add .env.example for Redis, Mongo, MySQL configs",
+        "Enable local Redis, MongoDB, MySQL connectivity",
+        "Add initial GitHub Actions for PHPUnit (local mode)",
+        "Setup development branches (main, develop, feature/*)"
+      ],
+      "tests": [
+        "Bootstrap environment validation",
+        "Composer autoload sanity check"
+      ],
+      "outputs": [
+        "composer.json",
+        ".env.example",
+        ".github/workflows/phpunit.yml"
+      ],
+      "architecture": [
+        "Local-first development model",
+        "CI-first validation flow"
+      ]
+    },
+    {
+      "id": "phase2",
+      "title": "Core Architecture",
+      "version": "0.2.0",
+      "status": "completed",
+      "summary": "Contracts, enums, DTOs, and main configuration layer.",
+      "tasks": [
+        "Create RateLimiterInterface",
+        "Implement RateLimitActionEnum and PlatformEnum",
+        "Build RateLimitConfig loader",
+        "Add DTO: RateLimitStatusDTO",
+        "Add TooManyRequestsException class"
+      ],
+      "tests": [
+        "DTO serialization tests",
+        "Config loader tests",
+        "Enum contract compliance tests"
+      ],
+      "outputs": [
+        "RateLimiterInterface.php",
+        "RateLimitConfig.php",
+        "RateLimitStatusDTO.php",
+        "TooManyRequestsException.php"
+      ],
+      "architecture": [
+        "Contract-first design",
+        "Strict DTO boundary"
+      ]
+    },
+    {
+      "id": "phase3",
+      "title": "Storage Drivers",
+      "version": "0.3.0",
+      "status": "completed",
+      "summary": "Full Redis, MongoDB, and MySQL drivers with TTL-based rate enforcement.",
+      "tasks": [
+        "Implement RedisRateLimiter (INCR + EXPIRE)",
+        "Implement MongoRateLimiter (TTL Index + expires_at)",
+        "Implement MySQLRateLimiter (table ip_rate_limits)",
+        "Add unit tests for each driver",
+        "Add cleanup cron for MySQL expired records"
+      ],
+      "tests": [
+        "RedisRateLimiterTest",
+        "MongoRateLimiterTest",
+        "MySQLRateLimiterTest"
+      ],
+      "outputs": [
+        "RedisRateLimiter.php",
+        "MongoRateLimiter.php",
+        "MySQLRateLimiter.php"
+      ],
+      "depends_on": [
+        "phase2"
+      ],
+      "architecture": [
+        "Driver-per-storage strategy",
+        "TTL-based window enforcement"
+      ]
+    },
+    {
+      "id": "phase4",
+      "title": "Resolver & Enum Contracts Refactor",
+      "version": "0.4.0",
+      "status": "completed",
+      "summary": "Dynamic driver resolution with interface-based enums.",
+      "tasks": [
+        "Add RateLimitActionInterface and PlatformInterface",
+        "Update enums to implement contracts",
+        "Create RateLimiterResolver",
+        "Build RateLimitHeadersMiddleware (PSR-15)",
+        "Integrate with Slim Framework",
+        "Integrate with Laravel middleware"
+      ],
+      "tests": [
+        "Resolver routing tests",
+        "Middleware invocation tests"
+      ],
+      "outputs": [
+        "RateLimiterResolver.php",
+        "RateLimitHeadersMiddleware.php",
+        "Enum contract interfaces"
+      ],
+      "depends_on": [
+        "phase3"
+      ],
+      "architecture": [
+        "Open/Closed enum design",
+        "Resolver-based driver routing"
+      ]
+    },
+    {
+      "id": "phase5",
+      "title": "Exponential Backoff & Global Limit",
+      "version": "1.0.0",
+      "status": "completed",
+      "summary": "Adaptive backoff delays and global IP-based rate limiting.",
+      "tasks": [
+        "Add exponential backoff algorithm (2ⁿ logic)",
+        "Extend RateLimitStatusDTO with backoffSeconds and nextAllowedAt",
+        "Introduce global IP limiter rate:ip:{ip}",
+        "Add .env keys: GLOBAL_RATE_LIMIT, GLOBAL_RATE_WINDOW, BACKOFF_BASE, BACKOFF_MAX",
+        "Enhance TooManyRequestsException with retry metadata",
+        "Update resolver and drivers to support backoff-aware responses"
+      ],
+      "tests": [
+        "BackoffTest",
+        "GlobalIpLimiterTest"
+      ],
+      "outputs": [
+        "Backoff logic in all drivers",
+        "Enhanced RateLimitStatusDTO",
+        "Updated TooManyRequestsException"
+      ],
+      "depends_on": [
+        "phase4"
+      ],
+      "architecture": [
+        "Adaptive delay escalation",
+        "Global limiter overlay"
+      ]
+    },
+    {
+      "id": "phase6",
+      "title": "Alerting & Logging",
+      "version": "1.1.0",
+      "status": "pending",
+      "summary": "Security logging and alert delivery on rate violations.",
+      "tasks": [
+        "Integrate PSR-3 logger",
+        "Implement RateLimiterEventHandler",
+        "Configure Telegram & Email alerts",
+        "Design /logs/security/rate_limit structure"
+      ],
+      "tests": [],
+      "outputs": [
+        "RateLimiterEventHandler.php",
+        "Security log files",
+        "Telegram alert adapter"
+      ],
+      "depends_on": [
+        "phase5"
+      ]
+    },
+    {
+      "id": "phase7",
+      "title": "Monitoring & Observability",
+      "version": "1.2.0",
+      "status": "pending",
+      "summary": "Expose metrics, health checks, and operational telemetry.",
+      "tasks": [
+        "Expose /admin/rate-limit/health endpoint",
+        "Expose /admin/rate-limit/stats endpoint",
+        "Expose /admin/rate-limit/metrics (Prometheus)",
+        "Enable Grafana integration"
+      ],
+      "tests": [],
+      "outputs": [
+        "Metrics endpoint",
+        "Grafana dashboard"
+      ],
+      "depends_on": [
+        "phase6"
+      ]
+    },
+    {
+      "id": "phase8",
+      "title": "Reset Service & Admin Dashboard",
+      "version": "1.3.0",
+      "status": "pending",
+      "summary": "Admin control UI and reset services.",
+      "tasks": [
+        "Implement resetAll() in all drivers",
+        "Add REST endpoint /admin/rate-limit/reset",
+        "Develop RateLimiterDashboard.php",
+        "Add Reset / Block / Unblock actions"
+      ],
+      "tests": [],
+      "outputs": [
+        "Admin reset API",
+        "Dashboard UI"
+      ],
+      "depends_on": [
+        "phase7"
+      ]
+    },
+    {
+      "id": "phase9",
+      "title": "Unit Tests & QA",
+      "version": "1.4.0",
+      "status": "pending",
+      "summary": "Stress testing, performance profiling, and QA hardening.",
+      "tasks": [
+        "Achieve coverage > 80%",
+        "Load test Redis under 5k req/sec",
+        "Test Mongo & MySQL consistency",
+        "Simulate real user actions"
+      ],
+      "tests": [],
+      "outputs": [
+        "Performance reports",
+        "Final QA report"
+      ],
+      "depends_on": [
+        "phase8"
+      ]
+    },
+    {
+      "id": "phase10",
+      "title": "Documentation & Public Release",
+      "version": "1.5.0",
+      "status": "pending",
+      "summary": "Final documentation, tagging, and Packagist publishing.",
+      "tasks": [
+        "Finalize README.md and CONTRIBUTING.md",
+        "Finalize CHANGELOG.md",
+        "Create GitHub Wiki or Pages",
+        "Tag release v1.0.0",
+        "Publish on Packagist"
+      ],
+      "tests": [],
+      "outputs": [
+        "Public documentation",
+        "Packagist package"
+      ],
+      "depends_on": [
+        "phase9"
+      ]
+    }
+  ]
+}

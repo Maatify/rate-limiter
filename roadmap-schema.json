@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Maatify Roadmap Schema",
+  "type": "object",
+
+  "required": ["roadmap_version", "project", "phases"],
+
+  "properties": {
+    "roadmap_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+
+    "project": {
+      "type": "string",
+      "description": "The name of the project this roadmap describes."
+    },
+
+    "note": {
+      "type": "string"
+    },
+
+    "core_dependencies": {
+      "type": "object",
+      "description": "Optional metadata describing required contracts/libraries for this project.",
+      "additionalProperties": true
+    },
+
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "version", "status", "summary", "tasks", "outputs"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^phase[0-9]+$"
+          },
+
+          "title": {
+            "type": "string"
+          },
+
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed"]
+          },
+
+          "summary": {
+            "type": "string"
+          },
+
+          "tasks": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+
+          "tests": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+
+          "outputs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+
+          "depends_on": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+
+          "architecture": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+
+          "changes_needed": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+
+  "additionalProperties": false
+}
