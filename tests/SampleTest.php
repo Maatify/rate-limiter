@@ -12,6 +12,8 @@
 
 declare(strict_types=1);
 
+namespace Maatify\RateLimiter\Tests;
+
 use PHPUnit\Framework\TestCase;
 
 /**

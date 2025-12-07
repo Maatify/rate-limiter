@@ -12,12 +12,17 @@
 
 declare(strict_types=1);
 
+namespace Maatify\RateLimiter\Tests;
+
 use Maatify\RateLimiter\Drivers\MongoRateLimiter;
 use Maatify\RateLimiter\Drivers\MySQLRateLimiter;
 use Maatify\RateLimiter\DTO\RateLimitStatusDTO;
+use PDO;
+use PDOStatement;
 use PHPUnit\Framework\TestCase;
 use Maatify\RateLimiter\Resolver\RateLimiterResolver;
 use MongoDB\Collection;
+use ReflectionMethod;
 
 /**
  * 🧩 Class BackoffTest

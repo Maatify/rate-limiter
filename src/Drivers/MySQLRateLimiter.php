@@ -107,7 +107,7 @@ final class MySQLRateLimiter implements RateLimiterInterface
         }
 
         // 📊 Retrieve current request count
-        $stmt = $this->pdo->prepare("SELECT count FROM ip_rate_limits WHERE key_name = ?");
+        $stmt = $this->pdo->prepare('SELECT count FROM ip_rate_limits WHERE key_name = ?');
         $count = 0;
         if ($stmt) {
             $stmt->execute([$key]);

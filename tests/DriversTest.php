@@ -12,6 +12,8 @@
 
 declare(strict_types=1);
 
+namespace Maatify\RateLimiter\Tests;
+
 use PHPUnit\Framework\TestCase;
 use Maatify\RateLimiter\Config\RateLimitConfig;
 use Maatify\RateLimiter\Enums\RateLimitActionEnum;

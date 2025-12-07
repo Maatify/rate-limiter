@@ -12,6 +12,8 @@
 
 declare(strict_types=1);
 
+namespace Maatify\RateLimiter\Tests;
+
 use Maatify\RateLimiter\Contracts\PlatformInterface;
 use Maatify\RateLimiter\Contracts\RateLimitActionInterface;
 use Maatify\RateLimiter\Contracts\RateLimiterInterface;

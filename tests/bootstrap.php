@@ -12,7 +12,6 @@
 
 declare(strict_types=1);
 
-use Dotenv\Dotenv;
 use Maatify\Bootstrap\Core\EnvironmentLoader;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -40,7 +39,6 @@ $envPath = dirname(__DIR__);
  * - Displays the detected `APP_ENV` variable.
  */
 
-
 // ------------------------------------------------------------
 // 1) Load composer autoload
 // ------------------------------------------------------------
@@ -52,7 +50,6 @@ if (! file_exists($autoload)) {
 }
 
 require_once $autoload;
-
 
 // ------------------------------------------------------------
 // 2) Load environment variables (testing/default)
@@ -85,4 +82,3 @@ if (function_exists('ini_set')) {
     ini_set('output_buffering', 'off');
     ini_set('implicit_flush', '1');
 }
-
