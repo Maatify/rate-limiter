@@ -1,1 +1,6 @@
 vendor/
+.php-cs-fixer.cache
+.phpunit.cache/
+coverage/
+coverage.xml
+dump.rdb

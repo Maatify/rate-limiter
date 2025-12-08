@@ -17,6 +17,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 #[RunTestsInSeparateProcesses]
 final class RateLimitWebMiddlewareTest extends TestCase
@@ -82,9 +83,7 @@ final class RateLimitWebMiddlewareTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    /**
-     * @runInSeparateProcess
-     */
+    #[RunInSeparateProcess]
     public function testProcessRedirectsOnTooManyRequests(): void
     {
         $this->request->method('getServerParams')->willReturn(['REMOTE_ADDR' => '127.0.0.1']);
