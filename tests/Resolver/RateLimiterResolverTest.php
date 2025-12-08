@@ -10,6 +10,7 @@ use Maatify\RateLimiter\Drivers\MySQLRateLimiter;
 use Maatify\RateLimiter\Resolver\RateLimiterResolver;
 use PHPUnit\Framework\TestCase;
 use InvalidArgumentException;
+use ReflectionClass;
 
 final class RateLimiterResolverTest extends TestCase
 {
@@ -35,22 +36,29 @@ final class RateLimiterResolverTest extends TestCase
     {
         $resolver = new RateLimiterResolver([
             'driver' => 'mysql',
-            'mysql_dsn' => 'sqlite::memory:', // Use sqlite memory for PDO instantiability test if mysql driver missing?
-            // Wait, MySQLRateLimiter expects a PDO. resolver does new PDO().
-            // If pdo_mysql ext is missing, it might fail.
-            // But usually PDO works if DSN is valid format or even if it fails connection?
-            // Actually, `new PDO` tries to connect. If no server, it throws exception.
-            // This test might be fragile if no real MySQL/Mongo server.
-            // But we can test it handles 'mysql' string.
-            // Since we can't mock `new PDO` inside the class easily without DI,
-            // we will skip actual instantiation test if it depends on external services.
-            // However, Redis instantiation `new Redis()` also requires ext-redis.
+            'mysql_dsn' => 'sqlite::memory:',
         ]);
 
-        // This test assumes environment has drivers/extensions.
-        // If not, we should skip or use a mockable approach, but we can't change src.
-        // So we just check if class exists.
-        $this->assertTrue(class_exists(MySQLRateLimiter::class));
+        // This will try to create MySQLRateLimiter with a PDO instance.
+        // Since we use sqlite::memory:, it might succeed in creating PDO,
+        // and thus MySQLRateLimiter.
+        // But MySQLRateLimiter might expect MySQL specific things?
+        // No, it just takes PDO.
+
+        $this->assertInstanceOf(MySQLRateLimiter::class, $resolver->resolve());
+    }
+
+    public function testResolveMySQLConnectionFail(): void
+    {
+        $resolver = new RateLimiterResolver([
+            'driver' => 'mysql',
+            'mysql_dsn' => 'mysql:host=invalid_host;dbname=test',
+            'mysql_user' => 'user',
+            'mysql_pass' => 'pass',
+        ]);
+
+        $this->expectException(\PDOException::class);
+        $resolver->resolve();
     }
 
     public function testResolveThrowsExceptionForUnknownDriver(): void
@@ -71,9 +79,9 @@ final class RateLimiterResolverTest extends TestCase
     public function testGetIntConfigHandlesNumericStrings(): void
     {
         // Testing private getIntConfig via Reflection or implicit via Redis port logic
-        // But since we can't easily check port on Redis object, let's use Reflection
+        // But since we can't easily check port on a Redis object, let's use Reflection
         $resolver = new RateLimiterResolver(['port' => '6379']);
-        $reflection = new \ReflectionClass($resolver);
+        $reflection = new ReflectionClass($resolver);
         $method = $reflection->getMethod('getIntConfig');
         $method->setAccessible(true);
 
@@ -83,7 +91,7 @@ final class RateLimiterResolverTest extends TestCase
     public function testGetIntConfigHandlesIntegers(): void
     {
         $resolver = new RateLimiterResolver(['port' => 6379]);
-        $reflection = new \ReflectionClass($resolver);
+        $reflection = new ReflectionClass($resolver);
         $method = $reflection->getMethod('getIntConfig');
         $method->setAccessible(true);
 
@@ -93,7 +101,7 @@ final class RateLimiterResolverTest extends TestCase
     public function testGetIntConfigReturnsDefaultWhenMissing(): void
     {
         $resolver = new RateLimiterResolver([]);
-        $reflection = new \ReflectionClass($resolver);
+        $reflection = new ReflectionClass($resolver);
         $method = $reflection->getMethod('getIntConfig');
         $method->setAccessible(true);
 
@@ -103,7 +111,7 @@ final class RateLimiterResolverTest extends TestCase
     public function testGetStringConfigHandlesStrings(): void
     {
         $resolver = new RateLimiterResolver(['host' => 'localhost']);
-        $reflection = new \ReflectionClass($resolver);
+        $reflection = new ReflectionClass($resolver);
         $method = $reflection->getMethod('getStringConfig');
         $method->setAccessible(true);
 
@@ -113,7 +121,7 @@ final class RateLimiterResolverTest extends TestCase
     public function testGetStringConfigReturnsDefaultWhenMissingOrNonString(): void
     {
         $resolver = new RateLimiterResolver(['host' => 123]);
-        $reflection = new \ReflectionClass($resolver);
+        $reflection = new ReflectionClass($resolver);
         $method = $reflection->getMethod('getStringConfig');
         $method->setAccessible(true);
 
