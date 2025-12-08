@@ -10,6 +10,7 @@ use Maatify\RateLimiter\Enums\PlatformEnum;
 use Maatify\RateLimiter\Enums\RateLimitActionEnum;
 use Maatify\RateLimiter\Middleware\RateLimitWebMiddleware;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -19,9 +20,15 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[RunTestsInSeparateProcesses]
 final class RateLimitWebMiddlewareTest extends TestCase
 {
+    /** @var RateLimiterInterface&MockObject */
     private RateLimiterInterface $limiter;
+
     private RateLimitWebMiddleware $middleware;
+
+    /** @var ServerRequestInterface&MockObject */
     private ServerRequestInterface $request;
+
+    /** @var RequestHandlerInterface&MockObject */
     private RequestHandlerInterface $handler;
 
     protected function setUp(): void

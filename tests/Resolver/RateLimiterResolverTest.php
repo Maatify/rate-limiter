@@ -56,12 +56,8 @@ final class RateLimiterResolverTest extends TestCase
             'mysql_pass' => 'pass',
         ]);
 
-        try {
-            $resolver->resolve();
-            $this->fail('Expected PDOException was not thrown');
-        } catch (\PDOException $e) {
-            $this->assertTrue(true);
-        }
+        $this->expectException(\PDOException::class);
+        $resolver->resolve();
     }
 
     public function testResolveThrowsExceptionForUnknownDriver(): void
