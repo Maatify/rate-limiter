@@ -35,22 +35,33 @@ final class RateLimiterResolverTest extends TestCase
     {
         $resolver = new RateLimiterResolver([
             'driver' => 'mysql',
-            'mysql_dsn' => 'sqlite::memory:', // Use sqlite memory for PDO instantiability test if mysql driver missing?
-            // Wait, MySQLRateLimiter expects a PDO. resolver does new PDO().
-            // If pdo_mysql ext is missing, it might fail.
-            // But usually PDO works if DSN is valid format or even if it fails connection?
-            // Actually, `new PDO` tries to connect. If no server, it throws exception.
-            // This test might be fragile if no real MySQL/Mongo server.
-            // But we can test it handles 'mysql' string.
-            // Since we can't mock `new PDO` inside the class easily without DI,
-            // we will skip actual instantiation test if it depends on external services.
-            // However, Redis instantiation `new Redis()` also requires ext-redis.
+            'mysql_dsn' => 'sqlite::memory:',
         ]);
 
-        // This test assumes environment has drivers/extensions.
-        // If not, we should skip or use a mockable approach, but we can't change src.
-        // So we just check if class exists.
-        $this->assertTrue(class_exists(MySQLRateLimiter::class));
+        // This will try to create MySQLRateLimiter with a PDO instance.
+        // Since we use sqlite::memory:, it might succeed in creating PDO,
+        // and thus MySQLRateLimiter.
+        // But MySQLRateLimiter might expect MySQL specific things?
+        // No, it just takes PDO.
+
+        $this->assertInstanceOf(MySQLRateLimiter::class, $resolver->resolve());
+    }
+
+    public function testResolveMySQLConnectionFail(): void
+    {
+        $resolver = new RateLimiterResolver([
+            'driver' => 'mysql',
+            'mysql_dsn' => 'mysql:host=invalid_host;dbname=test',
+            'mysql_user' => 'user',
+            'mysql_pass' => 'pass',
+        ]);
+
+        try {
+            $resolver->resolve();
+            $this->fail('Expected PDOException was not thrown');
+        } catch (\PDOException $e) {
+            $this->assertTrue(true);
+        }
     }
 
     public function testResolveThrowsExceptionForUnknownDriver(): void
