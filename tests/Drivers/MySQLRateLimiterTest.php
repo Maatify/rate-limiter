@@ -125,6 +125,9 @@ final class MySQLRateLimiterTest extends TestCase
         $method->setAccessible(true);
 
         $status = $method->invoke($limiter, 'user123', 3);
+        // Explicitly assert instance to help static analysis if needed
+        $this->assertInstanceOf(RateLimitStatusDTO::class, $status);
+        /** @var RateLimitStatusDTO $status */
         $this->assertEquals(8, $status->backoffSeconds);
     }
 

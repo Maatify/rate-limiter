@@ -109,6 +109,8 @@ final class RedisRateLimiterTest extends TestCase
         $method->setAccessible(true);
 
         $status = $method->invoke($limiter, 'user123', 3);
+        $this->assertInstanceOf(RateLimitStatusDTO::class, $status);
+        /** @var RateLimitStatusDTO $status */
         $this->assertEquals(8, $status->backoffSeconds);
     }
 }
