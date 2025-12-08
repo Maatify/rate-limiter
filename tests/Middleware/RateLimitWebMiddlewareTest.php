@@ -14,9 +14,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-/**
- * @runTestsInSeparateProcesses
- */
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+
+#[RunTestsInSeparateProcesses]
 final class RateLimitWebMiddlewareTest extends TestCase
 {
     private RateLimiterInterface $limiter;
