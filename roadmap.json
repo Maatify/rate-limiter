@@ -35,7 +35,7 @@
       "id": "phase2",
       "title": "Core Architecture",
       "version": "0.2.0",
-      "status": "pending",
+      "status": "completed",
       "summary": "Contracts, enums, DTOs, and main configuration layer.",
       "tasks": [
         "Create RateLimiterInterface",
@@ -64,7 +64,7 @@
       "id": "phase3",
       "title": "Storage Drivers",
       "version": "0.3.0",
-      "status": "pending",
+      "status": "completed",
       "summary": "Full Redis, MongoDB, and MySQL drivers with TTL-based rate enforcement.",
       "tasks": [
         "Implement RedisRateLimiter (INCR + EXPIRE)",
@@ -93,7 +93,7 @@
       "id": "phase4",
       "title": "Resolver & Enum Contracts Refactor",
       "version": "0.4.0",
-      "status": "pending",
+      "status": "completed",
       "summary": "Dynamic driver resolution with interface-based enums and PSR middleware support.",
       "tasks": [
         "Add RateLimitActionInterface and PlatformInterface",
@@ -122,7 +122,7 @@
       "id": "phase5",
       "title": "Exponential Backoff & Global Limit",
       "version": "1.0.0",
-      "status": "pending",
+      "status": "completed",
       "summary": "Adaptive backoff delays and global IP-based rate limiting.",
       "tasks": [
         "Add exponential backoff algorithm (2ⁿ logic)",
