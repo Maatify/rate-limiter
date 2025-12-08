@@ -88,6 +88,23 @@ final class MySQLRateLimiterTest extends TestCase
         $this->assertEquals(0, 5 - $status->remaining); // Limit 5 - 0 = 5 remaining
     }
 
+    public function testAttemptHandlesSecondPrepareFailure(): void
+    {
+        $pdo = $this->createMock(PDO::class);
+        $stmt = $this->createMock(PDOStatement::class);
+        $limiter = new MySQLRateLimiter($pdo);
+
+        // First prepare (INSERT) succeeds, Second (SELECT) fails
+        $pdo->method('prepare')->willReturnOnConsecutiveCalls($stmt, false);
+
+        $stmt->method('execute')->willReturn(true);
+
+        // Logic: Insert happens. Select fails -> count is 0.
+        $status = $limiter->attempt('user123', RateLimitActionEnum::LOGIN, PlatformEnum::WEB);
+
+        $this->assertEquals(5, $status->remaining);
+    }
+
     public function testStatusHandlesPrepareFailure(): void
     {
         $pdo = $this->createMock(PDO::class);
