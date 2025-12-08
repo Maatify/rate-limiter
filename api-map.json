@@ -1,6 +1,7 @@
 {
   "project": "maatify/rate-limiter",
-  "version": "1.0.0-alpha-phase4.1",
+  "version": "1.0.0-alpha-phase5",
+  "status": "frozen",
   "namespaces": {
     "Maatify\\RateLimiter\\DTO": {
       "RateLimitStatusDTO": {
@@ -20,26 +21,30 @@
           },
           {
             "name": "toArray",
+            "return": "array{limit:int, remaining:int, resetAfter:int, retryAfter:?int, backoffSeconds:?int, nextAllowedAt:?string}",
             "parameters": []
           }
         ]
       }
     },
+
     "Maatify\\RateLimiter\\Drivers": {
       "RedisRateLimiter": {
         "kind": "class",
         "file": "src/Drivers/RedisRateLimiter.php",
+        "implements": ["Maatify\\RateLimiter\\Contracts\\RateLimiterInterface"],
         "methods": [
           {
             "name": "__construct",
             "parameters": [
-              "Redis $client",
+              "\\Redis $client",
               "int $defaultLimit = 60",
               "int $defaultWindow = 60"
             ]
           },
           {
             "name": "attempt",
+            "return": "RateLimitStatusDTO",
             "parameters": [
               "string $key",
               "RateLimitActionEnum $action",
@@ -48,6 +53,7 @@
           },
           {
             "name": "status",
+            "return": "RateLimitStatusDTO",
             "parameters": [
               "string $key",
               "RateLimitActionEnum $action",
@@ -56,20 +62,23 @@
           }
         ]
       },
+
       "MongoRateLimiter": {
         "kind": "class",
         "file": "src/Drivers/MongoRateLimiter.php",
+        "implements": ["Maatify\\RateLimiter\\Contracts\\RateLimiterInterface"],
         "methods": [
           {
             "name": "__construct",
             "parameters": [
-              "Collection $collection",
+              "MongoDB\\Collection $collection",
               "int $defaultLimit = 60",
               "int $defaultWindow = 60"
             ]
           },
           {
             "name": "attempt",
+            "return": "RateLimitStatusDTO",
             "parameters": [
               "string $key",
               "RateLimitActionEnum $action",
@@ -78,6 +87,7 @@
           },
           {
             "name": "status",
+            "return": "RateLimitStatusDTO",
             "parameters": [
               "string $key",
               "RateLimitActionEnum $action",
@@ -86,9 +96,11 @@
           }
         ]
       },
+
       "MySQLRateLimiter": {
         "kind": "class",
         "file": "src/Drivers/MySQLRateLimiter.php",
+        "implements": ["Maatify\\RateLimiter\\Contracts\\RateLimiterInterface"],
         "methods": [
           {
             "name": "__construct",
@@ -101,6 +113,7 @@
           },
           {
             "name": "attempt",
+            "return": "RateLimitStatusDTO",
             "parameters": [
               "string $key",
               "RateLimitActionEnum $action",
@@ -109,6 +122,7 @@
           },
           {
             "name": "status",
+            "return": "RateLimitStatusDTO",
             "parameters": [
               "string $key",
               "RateLimitActionEnum $action",
@@ -118,6 +132,7 @@
         ]
       }
     },
+
     "Maatify\\RateLimiter\\Config": {
       "RateLimitConfig": {
         "kind": "class",
@@ -136,11 +151,13 @@
           },
           {
             "name": "fromEnv",
+            "return": "self",
             "parameters": []
           }
         ]
       }
     },
+
     "Maatify\\RateLimiter\\Contracts": {
       "RateLimiterInterface": {
         "kind": "interface",
@@ -148,6 +165,7 @@
         "methods": [
           {
             "name": "attempt",
+            "return": "RateLimitStatusDTO",
             "parameters": [
               "string $key",
               "RateLimitActionEnum $action",
@@ -156,6 +174,7 @@
           },
           {
             "name": "status",
+            "return": "RateLimitStatusDTO",
             "parameters": [
               "string $key",
               "RateLimitActionEnum $action",
@@ -164,53 +183,61 @@
           }
         ]
       },
+
       "PlatformInterface": {
         "kind": "interface",
         "file": "src/Contracts/PlatformInterface.php",
         "methods": [
           {
             "name": "value",
+            "return": "string",
             "parameters": []
           }
         ]
       },
+
       "RateLimitActionInterface": {
         "kind": "interface",
         "file": "src/Contracts/RateLimitActionInterface.php",
         "methods": [
           {
             "name": "value",
+            "return": "string",
             "parameters": []
           }
         ]
       }
     },
+
     "Maatify\\RateLimiter\\Enums": {
       "RateLimitActionEnum": {
-        "kind": "class",
+        "kind": "enum",
         "file": "src/Enums/RateLimitActionEnum.php",
         "methods": [
           {
             "name": "values",
-            "parameters": []
+            "return": "array<string>"
           }
         ]
       },
+
       "PlatformEnum": {
-        "kind": "class",
+        "kind": "enum",
         "file": "src/Enums/PlatformEnum.php",
         "methods": [
           {
             "name": "values",
-            "parameters": []
+            "return": "array<string>"
           }
         ]
       }
     },
+
     "Maatify\\RateLimiter\\Exceptions": {
       "TooManyRequestsException": {
         "kind": "class",
         "file": "src/Exceptions/TooManyRequestsException.php",
+        "extends": "RuntimeException",
         "methods": [
           {
             "name": "__construct",
@@ -223,11 +250,13 @@
           },
           {
             "name": "getStatus",
+            "return": "?RateLimitStatusDTO",
             "parameters": []
           }
         ]
       }
     },
+
     "Maatify\\RateLimiter\\Middleware": {
       "RateLimitWebMiddleware": {
         "kind": "class",
@@ -243,6 +272,7 @@
           },
           {
             "name": "process",
+            "return": "ResponseInterface",
             "parameters": [
               "ServerRequestInterface $request",
               "RequestHandlerInterface $handler"
@@ -250,12 +280,14 @@
           }
         ]
       },
+
       "RateLimitHeadersMiddleware": {
         "kind": "class",
         "file": "src/Middleware/RateLimitHeadersMiddleware.php",
         "methods": [
           {
             "name": "process",
+            "return": "ResponseInterface",
             "parameters": [
               "ServerRequestInterface $request",
               "RequestHandlerInterface $handler"
@@ -264,6 +296,7 @@
         ]
       }
     },
+
     "Maatify\\RateLimiter\\Resolver": {
       "RateLimiterResolver": {
         "kind": "class",
@@ -279,6 +312,7 @@
           },
           {
             "name": "resolveForPlatform",
+            "return": "RateLimiterInterface",
             "parameters": [
               "PlatformEnum $platform"
             ]

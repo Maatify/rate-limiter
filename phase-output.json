@@ -1,0 +1,173 @@
+{
+  "project": "maatify/rate-limiter",
+  "current_version": "1.0.0-alpha-phase5",
+  "last_completed_phase": "phase5",
+  "generated_at": "2025-12-07T20:15:00Z",
+
+  "phases": [
+    {
+      "id": "phase1",
+      "version": "0.1.0",
+      "status": "completed",
+      "summary": "Project bootstrap, Composer initialization, environment setup, and basic CI pipeline.",
+      "changes": {
+        "added": [
+          "composer.json",
+          ".env.example",
+          ".github/workflows/phpunit.yml"
+        ],
+        "updated": [],
+        "removed": []
+      },
+      "tests_result": {
+        "fake": "passed",
+        "real": "passed"
+      },
+      "coverage": "N/A",
+      "documentation_files": [
+        "docs/phases/README.phase1.md"
+      ],
+      "commit_metadata": {
+        "type": "chore",
+        "scope": "bootstrap",
+        "message": "chore: initial project bootstrap and CI setup"
+      }
+    },
+
+    {
+      "id": "phase2",
+      "version": "0.2.0",
+      "status": "completed",
+      "summary": "Core architecture including interfaces, enums, DTOs, and configuration loader.",
+      "changes": {
+        "added": [
+          "src/Contracts/RateLimiterInterface.php",
+          "src/Contracts/PlatformInterface.php",
+          "src/Contracts/RateLimitActionInterface.php",
+          "src/Enums/RateLimitActionEnum.php",
+          "src/Enums/PlatformEnum.php",
+          "src/DTO/RateLimitStatusDTO.php",
+          "src/Config/RateLimitConfig.php",
+          "src/Exceptions/TooManyRequestsException.php"
+        ],
+        "updated": [],
+        "removed": []
+      },
+      "tests_result": {
+        "fake": "passed",
+        "real": "passed"
+      },
+      "coverage": "N/A",
+      "documentation_files": [
+        "docs/phases/README.phase2.md"
+      ],
+      "commit_metadata": {
+        "type": "feat",
+        "scope": "core",
+        "message": "feat: add core contracts, enums, DTO and config loader"
+      }
+    },
+
+    {
+      "id": "phase3",
+      "version": "0.3.0",
+      "status": "completed",
+      "summary": "Implementation of Redis, MongoDB, and MySQL rate limiter drivers with TTL enforcement.",
+      "changes": {
+        "added": [
+          "src/Drivers/RedisRateLimiter.php",
+          "src/Drivers/MongoRateLimiter.php",
+          "src/Drivers/MySQLRateLimiter.php"
+        ],
+        "updated": [],
+        "removed": []
+      },
+      "tests_result": {
+        "fake": "passed",
+        "real": "passed"
+      },
+      "coverage": "N/A",
+      "documentation_files": [
+        "docs/phases/README.phase3.md"
+      ],
+      "commit_metadata": {
+        "type": "feat",
+        "scope": "drivers",
+        "message": "feat: add redis, mongo and mysql rate limiter drivers"
+      }
+    },
+
+    {
+      "id": "phase4",
+      "version": "0.4.0",
+      "status": "completed",
+      "summary": "Resolver, enum contracts refactor, and PSR middleware integration.",
+      "changes": {
+        "added": [
+          "src/Resolver/RateLimiterResolver.php",
+          "src/Middleware/RateLimitWebMiddleware.php",
+          "src/Middleware/RateLimitHeadersMiddleware.php"
+        ],
+        "updated": [
+          "src/Enums/RateLimitActionEnum.php",
+          "src/Enums/PlatformEnum.php"
+        ],
+        "removed": []
+      },
+      "tests_result": {
+        "fake": "passed",
+        "real": "passed"
+      },
+      "coverage": "N/A",
+      "documentation_files": [
+        "docs/phases/README.phase4.md"
+      ],
+      "commit_metadata": {
+        "type": "refactor",
+        "scope": "resolver-middleware",
+        "message": "refactor: add resolver and PSR middleware with enum contracts"
+      }
+    },
+
+    {
+      "id": "phase5",
+      "version": "1.0.0",
+      "status": "completed",
+      "summary": "Exponential backoff strategy and global IP-based rate limiting.",
+      "changes": {
+        "added": [
+          "Global IP limiter logic",
+          "Backoff calculation logic"
+        ],
+        "updated": [
+          "src/DTO/RateLimitStatusDTO.php",
+          "src/Exceptions/TooManyRequestsException.php",
+          "src/Drivers/RedisRateLimiter.php",
+          "src/Drivers/MongoRateLimiter.php",
+          "src/Drivers/MySQLRateLimiter.php"
+        ],
+        "removed": []
+      },
+      "tests_result": {
+        "fake": "passed",
+        "real": "passed"
+      },
+      "coverage": ">=85%",
+      "documentation_files": [
+        "docs/phases/README.phase5.md"
+      ],
+      "commit_metadata": {
+        "type": "feat",
+        "scope": "backoff",
+        "message": "feat: add exponential backoff and global ip rate limiting"
+      }
+    }
+  ],
+
+  "next_phase": {
+    "id": "phase6",
+    "title": "API Freeze & Stability Lock",
+    "version": "1.1.0",
+    "status": "pending"
+  }
+}
