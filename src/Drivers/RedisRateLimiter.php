@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Maatify\RateLimiter\Drivers;
 
 use Maatify\RateLimiter\Config\ActionRateLimitConfigProviderInterface;
-use Maatify\RateLimiter\Contracts\BackoffPolicyInterface;
 use Maatify\RateLimiter\Contracts\PlatformInterface;
 use Maatify\RateLimiter\Contracts\RateLimitActionInterface;
 use Maatify\RateLimiter\Contracts\RateLimiterInterface;
@@ -18,7 +17,6 @@ final class RedisRateLimiter implements RateLimiterInterface
     public function __construct(
         private readonly Redis $redis,
         private readonly ActionRateLimitConfigProviderInterface $configProvider,
-        private readonly ?BackoffPolicyInterface $backoffPolicy = null,
     ) {
     }
 
@@ -46,7 +44,7 @@ final class RedisRateLimiter implements RateLimiterInterface
             $ttl = $interval;
         }
 
-        $remaining = max(0, $limit - $current);
+        $remaining = $limit - $current;
 
         if ($current > $limit) {
             throw new TooManyRequestsException(
@@ -54,10 +52,11 @@ final class RedisRateLimiter implements RateLimiterInterface
                 429,
                 new RateLimitStatusDTO(
                     limit: $limit,
-                    remaining: 0,
+                    remaining: $remaining,
                     resetAfter: $ttl,
                     retryAfter: $ttl,
                     blocked: true,
+                    source: 'action',
                 )
             );
         }
@@ -67,6 +66,7 @@ final class RedisRateLimiter implements RateLimiterInterface
             remaining: $remaining,
             resetAfter: $ttl,
             blocked: $remaining <= 0,
+            source: 'action',
         );
     }
 
@@ -88,13 +88,14 @@ final class RedisRateLimiter implements RateLimiterInterface
             $ttl = $config->interval();
         }
 
-        $remaining = max(0, $config->limit() - $count);
+        $remaining = $config->limit() - $count;
 
         return new RateLimitStatusDTO(
             limit: $config->limit(),
             remaining: $remaining,
             resetAfter: $ttl,
             blocked: $remaining <= 0,
+            source: 'action',
         );
     }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Maatify\RateLimiter\Drivers;
 
 use Maatify\RateLimiter\Config\ActionRateLimitConfigProviderInterface;
-use Maatify\RateLimiter\Contracts\BackoffPolicyInterface;
 use Maatify\RateLimiter\Contracts\PlatformInterface;
 use Maatify\RateLimiter\Contracts\RateLimitActionInterface;
 use Maatify\RateLimiter\Contracts\RateLimiterInterface;
@@ -19,7 +18,6 @@ final class MongoRateLimiter implements RateLimiterInterface
     public function __construct(
         private readonly Collection $collection,
         private readonly ActionRateLimitConfigProviderInterface $configProvider,
-        private readonly ?BackoffPolicyInterface $backoffPolicy = null,
     ) {
     }
 
@@ -42,25 +40,29 @@ final class MongoRateLimiter implements RateLimiterInterface
         $record = (array) $this->collection->findOne(['_id' => $docKey]);
         $count = isset($record['count']) && is_numeric($record['count']) ? (int) $record['count'] : 1;
 
+        $remaining = $config->limit() - $count;
+
         if ($count > $config->limit()) {
             throw new TooManyRequestsException(
                 'Rate limit exceeded',
                 429,
                 new RateLimitStatusDTO(
                     limit: $config->limit(),
-                    remaining: 0,
+                    remaining: $remaining,
                     resetAfter: $config->interval(),
                     retryAfter: $config->interval(),
                     blocked: true,
+                    source: 'action',
                 )
             );
         }
 
         return new RateLimitStatusDTO(
             limit: $config->limit(),
-            remaining: $config->limit() - $count,
+            remaining: $remaining,
             resetAfter: $config->interval(),
-            blocked: $count >= $config->limit(),
+            blocked: $remaining <= 0,
+            source: 'action',
         );
     }
 
@@ -80,13 +82,14 @@ final class MongoRateLimiter implements RateLimiterInterface
         $record = (array) $this->collection->findOne(['_id' => $docId]);
         $count = isset($record['count']) && is_numeric($record['count']) ? (int) $record['count'] : 0;
 
-        $remaining = max(0, $config->limit() - $count);
+        $remaining = $config->limit() - $count;
 
         return new RateLimitStatusDTO(
             limit: $config->limit(),
             remaining: $remaining,
             resetAfter: $config->interval(),
             blocked: $remaining <= 0,
+            source: 'action',
         );
     }
 }

@@ -57,6 +57,7 @@ final class RateLimitStatusDTO
      * @param bool        $blocked        Indicates whether the client is currently blocked.
      * @param int|null    $backoffSeconds Optional adaptive backoff delay in seconds.
      * @param string|null $nextAllowedAt  UTC timestamp when the next request is allowed.
+     * @param string|null $source         Indicates whether the limiter was global or action-based.
      */
     public function __construct(
         public readonly int $limit,
@@ -66,6 +67,7 @@ final class RateLimitStatusDTO
         public readonly bool $blocked = false,
         public ?int $backoffSeconds = null,
         public ?string $nextAllowedAt = null,
+        public ?string $source = null,
     ) {
     }
 
@@ -81,7 +83,8 @@ final class RateLimitStatusDTO
      *     retry_after: int|null,
      *     blocked: bool,
      *     backoff_seconds: int|null,
-     *     next_allowed_at: string|null
+     *     next_allowed_at: string|null,
+     *     source: string|null
      * }
      *
      * ✅ Example:
@@ -99,6 +102,36 @@ final class RateLimitStatusDTO
             'blocked' => $this->blocked,
             'backoff_seconds' => $this->backoffSeconds,
             'next_allowed_at' => $this->nextAllowedAt,
+            'source' => $this->source,
         ];
+    }
+
+    /**
+     * Build a DTO from a serialized representation.
+     */
+    /**
+     * @param array{
+     *   limit?: int,
+     *   remaining?: int,
+     *   reset_after?: int,
+     *   retry_after?: int|null,
+     *   blocked?: bool,
+     *   backoff_seconds?: int|null,
+     *   next_allowed_at?: string|null,
+     *   source?: string|null
+     * } $data
+     */
+    public static function fromArray(array $data): self
+    {
+        return new self(
+            limit: (int) ($data['limit'] ?? 0),
+            remaining: (int) ($data['remaining'] ?? 0),
+            resetAfter: (int) ($data['reset_after'] ?? 0),
+            retryAfter: isset($data['retry_after']) ? (int) $data['retry_after'] : null,
+            blocked: (bool) ($data['blocked'] ?? false),
+            backoffSeconds: isset($data['backoff_seconds']) ? (int) $data['backoff_seconds'] : null,
+            nextAllowedAt: $data['next_allowed_at'] ?? null,
+            source: $data['source'] ?? null,
+        );
     }
 }

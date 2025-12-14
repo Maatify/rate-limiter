@@ -52,4 +52,14 @@ final class TooManyRequestsException extends Exception
         parent::__construct($message, $code);
         $this->status = $status;
     }
+
+    public function getRetryAfter(): ?int
+    {
+        return $this->status?->retryAfter;
+    }
+
+    public function getNextAllowedAt(): ?string
+    {
+        return $this->status?->nextAllowedAt;
+    }
 }
