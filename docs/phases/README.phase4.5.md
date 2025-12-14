@@ -195,3 +195,17 @@ These are **Phase 5 responsibilities**.
 Any further changes to backoff, global limiting, or blocking
 must occur strictly in **Phase 5**.
 
+---
+
+## Phase 4.5 Outcome Confirmation
+
+Phase 4.5 successfully stabilized architectural boundaries and enabled a deterministic Phase 5 implementation.
+
+Key confirmations:
+- Backoff logic is owned exclusively by resolver-level enforcement
+- Drivers remain storage-only with no behavioral escalation
+- Global limiter is enforced as an overlay before action limiters
+- RateLimitStatusDTO structure is finalized and Phase 6–ready
+- Resolver is fully injectable and testable
+
+All subsequent logic in Phase 5 was implemented without redesign or contract changes.

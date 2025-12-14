@@ -168,38 +168,42 @@
         "Resolver contains no infrastructure creation"
       ],
       "next_phase": "5.0"
-    },
-    {
+    },{
       "id": "phase5",
-      "version": "1.0.0",
-      "status": "completed",
-      "summary": "Exponential backoff strategy and global IP-based rate limiting.",
+      "version": "1.1.0",
+      "status": "in_progress",
+      "summary": "Resolver-level enforcement of global rate limiting with centralized exponential backoff, without driver logic leakage.",
       "changes": {
         "added": [
-          "Global IP limiter logic",
-          "Backoff calculation logic"
+          "Resolver-level enforcing rate limiter (global before action)",
+          "Centralized exponential backoff policy",
+          "Source attribution (global | action) in rate limit status"
         ],
         "updated": [
           "src/DTO/RateLimitStatusDTO.php",
           "src/Exceptions/TooManyRequestsException.php",
+          "src/Resolver/RateLimiterResolver.php",
+          "src/Resolver/EnforcingRateLimiter.php",
+          "src/Resolver/ExponentialBackoffPolicy.php",
           "src/Drivers/RedisRateLimiter.php",
           "src/Drivers/MongoRateLimiter.php",
           "src/Drivers/MySQLRateLimiter.php"
         ],
-        "removed": []
+        "removed": [
+          "Backoff policy dependency from rate limiter drivers",
+          "Driver-level responsibility for blocking escalation"
+        ]
       },
       "tests_result": {
-        "fake": "passed",
-        "real": "passed"
+        "fake": "not_applicable",
+        "real": "not_applicable"
       },
-      "coverage": ">=85%",
-      "documentation_files": [
-        "docs/phases/README.phase5.md"
-      ],
+      "coverage": "deferred_to_phase5_tests",
+      "documentation_files": [],
       "commit_metadata": {
         "type": "feat",
-        "scope": "backoff",
-        "message": "feat: add exponential backoff and global ip rate limiting"
+        "scope": "phase5-enforcement",
+        "message": "feat(phase5): enforce global rate limiting and centralized backoff via resolver"
       }
     }
   ],

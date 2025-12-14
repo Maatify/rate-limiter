@@ -541,6 +541,109 @@
           ]
         }
       }
+    },
+    "Maatify\\RateLimiter\\Resolver\\EnforcingRateLimiter": {
+      "type": "class",
+      "methods": {
+        "__construct": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "void",
+          "arguments": [
+            { "name": "driver", "type": "Maatify\\RateLimiter\\Contracts\\RateLimiterInterface" },
+            { "name": "backoffPolicy", "type": "Maatify\\RateLimiter\\Contracts\\BackoffPolicyInterface" }
+          ]
+        },
+        "attempt": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "Maatify\\RateLimiter\\DTO\\RateLimitStatusDTO",
+          "arguments": [
+            { "name": "key", "type": "string" },
+            { "name": "action", "type": "Maatify\\RateLimiter\\Contracts\\RateLimitActionInterface" },
+            { "name": "platform", "type": "Maatify\\RateLimiter\\Contracts\\PlatformInterface" }
+          ]
+        },
+        "reset": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "bool",
+          "arguments": [
+            { "name": "key", "type": "string" },
+            { "name": "action", "type": "Maatify\\RateLimiter\\Contracts\\RateLimitActionInterface" },
+            { "name": "platform", "type": "Maatify\\RateLimiter\\Contracts\\PlatformInterface" }
+          ]
+        },
+        "status": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "Maatify\\RateLimiter\\DTO\\RateLimitStatusDTO",
+          "arguments": [
+            { "name": "key", "type": "string" },
+            { "name": "action", "type": "Maatify\\RateLimiter\\Contracts\\RateLimitActionInterface" },
+            { "name": "platform", "type": "Maatify\\RateLimiter\\Contracts\\PlatformInterface" }
+          ]
+        }
+      }
+    },
+    "Maatify\\RateLimiter\\Resolver\\ExponentialBackoffPolicy": {
+      "type": "class",
+      "methods": {
+        "__construct": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "void",
+          "arguments": [
+            { "name": "base", "type": "int" },
+            { "name": "maxDelay", "type": "int|null" }
+          ]
+        },
+        "calculateDelay": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "int",
+          "arguments": [
+            { "name": "status", "type": "Maatify\\RateLimiter\\DTO\\RateLimitStatusDTO" }
+          ]
+        }
+      }
+    },
+    "Maatify\\RateLimiter\\DTO\\RateLimitStatusDTO": {
+      "type": "class",
+      "methods": {
+        "__construct": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "void",
+          "arguments": [
+            { "name": "limit", "type": "int" },
+            { "name": "remaining", "type": "int" },
+            { "name": "resetAfter", "type": "int" },
+            { "name": "retryAfter", "type": "int|null" },
+            { "name": "blocked", "type": "bool" },
+            { "name": "backoffSeconds", "type": "int|null" },
+            { "name": "nextAllowedAt", "type": "string|null" },
+            { "name": "source", "type": "string|null" }
+          ]
+        },
+        "toArray": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "array",
+          "arguments": []
+        },
+        "fromArray": {
+          "visibility": "public",
+          "static": true,
+          "return_type": "self",
+          "arguments": [
+            { "name": "data", "type": "array" }
+          ]
+        }
+      }
     }
+
+
+
   }
 }
