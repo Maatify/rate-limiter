@@ -3,6 +3,15 @@
 [![Maatify Rate Limiter](https://img.shields.io/badge/Maatify-Rate--Limiter-blue?style=for-the-badge)](https://github.com/Maatify/rate-limiter)
 [![Maatify Ecosystem](https://img.shields.io/badge/Maatify-Ecosystem-9C27B0?style=for-the-badge)](https://github.com/Maatify)
 
+# Phase 5 — Conceptual & Behavioral Examples
+
+⚠️ These examples are EDUCATIONAL.
+They demonstrate behavior and contracts,
+not full production wiring.
+
+For production usage, see:
+- Real Redis / MySQL / Mongo drivers
+- Framework integrations
 
 This document contains standalone, copy-paste runnable PHP examples for the Phase 5 Rate Limiter implementation.
 
@@ -16,6 +25,11 @@ This document contains standalone, copy-paste runnable PHP examples for the Phas
 **Purpose:** Shows how to configure and enforce rate limits for specific actions (e.g., login).
 **File:** `examples/phase5/native/action_rate_limit.php`
 
+/**
+* ⚠️ EDUCATIONAL EXAMPLE
+* This example demonstrates behavior only.
+* Not intended for production usage.
+  */
 ```php
 <?php
 
@@ -135,6 +149,11 @@ echo "Done.\n";
 **Purpose:** Demonstrates the Global Limiter layer (EnforcingRateLimiter) catching excessive requests before they reach specific actions.
 **File:** `examples/phase5/native/global_ip_block.php`
 
+/**
+* ⚠️ EDUCATIONAL EXAMPLE
+* This example demonstrates behavior only.
+* Not intended for production usage.
+  */
 ```php
 <?php
 
@@ -217,6 +236,11 @@ try {
 **Purpose:** Visualizes how wait times increase (2^n) as repeated attempts are made over the limit.
 **File:** `examples/phase5/native/exponential_backoff.php`
 
+/**
+* ⚠️ EDUCATIONAL EXAMPLE
+* This example demonstrates behavior only.
+* Not intended for production usage.
+  */
 ```php
 <?php
 
@@ -281,6 +305,11 @@ echo "--------------------------------------------------------\n";
 **Purpose:** Shows how to convert the status object to/from arrays, useful for API responses or session storage.
 **File:** `examples/phase5/native/dto_serialization.php`
 
+/**
+* ⚠️ EDUCATIONAL EXAMPLE
+* This example demonstrates behavior only.
+* Not intended for production usage.
+  */
 ```php
 <?php
 
@@ -343,6 +372,11 @@ if ($original == $restored) {
 **Purpose:** Demonstrates how to inject a custom BackoffPolicy (e.g., Linear) instead of the default Exponential one.
 **File:** `examples/phase5/native/custom_backoff_policy.php`
 
+/**
+* ⚠️ EDUCATIONAL EXAMPLE
+* This example demonstrates behavior only.
+* Not intended for production usage.
+  */
 ```php
 <?php
 
