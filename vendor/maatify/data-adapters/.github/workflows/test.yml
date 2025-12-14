@@ -1,0 +1,320 @@
+name: Run Adapter Tests
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      GH_START_ISO: ${{ github.event.head_commit.timestamp }}
+      APP_ENV: testing
+
+      # Redis
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      REDIS_PASS: ""
+      REDIS_MAIN_DSN: "redis://127.0.0.1:6379"
+      REDIS_QUEUE_DSN: "redis://127.0.0.1:6379"
+      REDIS_SESSIONS_DSN: "redis://127.0.0.1:6379/2"
+      REDIS_CACHE_DSN: "redis://127.0.0.1:6379/2"
+      REDIS_ANALYTICS_DSN: "redis://127.0.0.1:6380"
+
+      # Mongo
+      MONGO_HOST: 127.0.0.1
+      MONGO_PORT: 27017
+      MONGO_USER: ""
+      MONGO_PASS: ""
+      MONGO_DB: maatify
+      MONGO_AUTH_SOURCE: admin
+      MONGO_MAIN_DSN: "mongodb://127.0.0.1:27017/maatify"
+      MONGO_LOGS_DSN: "mongodb://127.0.0.1:27017/logs"
+      MONGO_ACTIVITY_DSN: "mongodb://127.0.0.1:27017/activity"
+
+      # MySQL
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASS: root
+      MYSQL_DB: maatify_dev
+      MYSQL_DRIVER: dbal
+
+      MYSQL_DSN: "mysql:host=127.0.0.1;dbname=maatify_dev;charset=utf8mb4"
+      MYSQL_MAIN_DSN: "mysql:host=127.0.0.1;dbname=maatify_main;charset=utf8mb4"
+      MYSQL_MAIN_USER: root
+      MYSQL_MAIN_PASS: root
+      MYSQL_DEV_DSN: "mysql:host=127.0.0.1;dbname=maatify_dev;charset=utf8mb4"
+      MYSQL_BILLING_DSN: "mysql:host=127.0.0.1;dbname=maatify_billing;charset=utf8mb4"
+      MYSQL_LOGS_DSN: "mysql://root:root@127.0.0.1:3306/maatify_logs"
+      MYSQL_LOGS_DRIVER: dbal
+
+
+    services:
+      redis:
+        image: redis:7
+        ports: [ "6379:6379" ]
+
+      mongo:
+        image: mongo:7
+        ports: [ "27017:27017" ]
+
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: maatify_dev
+          MYSQL_AUTHENTICATION_PLUGIN: mysql_native_password
+        ports:
+          - "3306:3306"
+
+    steps:
+      # ---------------------------------------------
+      # 1) Load Repo (important: MUST be before ENV)
+      # ---------------------------------------------
+      - uses: actions/checkout@v4
+
+      # ---------------------------------------------
+      # 2) Inject ALL ENV into $_ENV via GITHUB_ENV
+      # ---------------------------------------------
+      - name: Inject Maatify Test Environment
+        run: |
+          echo "APP_ENV=testing" >> $GITHUB_ENV
+
+          # Redis
+          echo "REDIS_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "REDIS_PORT=6379" >> $GITHUB_ENV
+          echo "REDIS_PASS=" >> $GITHUB_ENV
+          echo "REDIS_MAIN_DSN=redis://127.0.0.1:6379" >> $GITHUB_ENV
+          echo "REDIS_QUEUE_DSN=redis://127.0.0.1:6379" >> $GITHUB_ENV
+          echo "REDIS_SESSIONS_DSN=redis://127.0.0.1:6379/2" >> $GITHUB_ENV
+          echo "REDIS_CACHE_DSN=redis://127.0.0.1:6379/2" >> $GITHUB_ENV
+          echo "REDIS_ANALYTICS_DSN=redis://127.0.0.1:6380" >> $GITHUB_ENV
+
+          # Mongo
+          echo "MONGO_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "MONGO_PORT=27017" >> $GITHUB_ENV
+          echo "MONGO_USER=" >> $GITHUB_ENV
+          echo "MONGO_PASS=" >> $GITHUB_ENV
+          echo "MONGO_DB=maatify" >> $GITHUB_ENV
+          echo "MONGO_AUTH_SOURCE=admin" >> $GITHUB_ENV
+          echo "MONGO_MAIN_DSN=mongodb://127.0.0.1:27017/maatify" >> $GITHUB_ENV
+          echo "MONGO_LOGS_DSN=mongodb://127.0.0.1:27017/logs" >> $GITHUB_ENV
+          echo "MONGO_ACTIVITY_DSN=mongodb://127.0.0.1:27017/activity" >> $GITHUB_ENV
+
+          # MySQL Legacy
+          echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "MYSQL_PORT=3306" >> $GITHUB_ENV
+          echo "MYSQL_USER=root" >> $GITHUB_ENV
+          echo "MYSQL_PASS=root" >> $GITHUB_ENV
+          echo "MYSQL_DB=maatify_dev" >> $GITHUB_ENV
+          echo "MYSQL_DRIVER=dbal" >> $GITHUB_ENV
+
+          # MySQL DSN Profiles
+          echo "MYSQL_DSN=mysql:host=127.0.0.1;dbname=maatify_dev;charset=utf8mb4" >> $GITHUB_ENV
+          echo "MYSQL_MAIN_DSN=mysql:host=127.0.0.1;dbname=maatify_main;charset=utf8mb4" >> $GITHUB_ENV
+          echo "MYSQL_MAIN_USER=root" >> $GITHUB_ENV
+          echo "MYSQL_MAIN_PASS=root" >> $GITHUB_ENV
+          echo "MYSQL_DEV_DSN=mysql:host=127.0.0.1;dbname=maatify_dev;charset=utf8mb4" >> $GITHUB_ENV
+          echo "MYSQL_BILLING_DSN=mysql:host=127.0.0.1;dbname=maatify_billing;charset=utf8mb4" >> $GITHUB_ENV
+          echo "MYSQL_LOGS_DSN=mysql://root:root@127.0.0.1:3306/maatify_logs" >> $GITHUB_ENV
+          echo "MYSQL_LOGS_DRIVER=dbal" >> $GITHUB_ENV
+
+          # Phase 13 Registry (optional but recommended)
+          echo "DB_REGISTRY_PATH=tests/fixtures/database_registry.json" >> $GITHUB_ENV
+
+      # ---------------------------------------------
+      # 3) PHP Setup
+      # ---------------------------------------------
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: 🔍 Debug Connections
+        run: |
+          echo "🧩 Environment: $APP_ENV"
+          echo "🧠 Checking Redis..."
+          redis-cli -h $REDIS_HOST ping || echo "⚠️ Redis not responding"
+          echo "🧠 Checking MySQL..."
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -e "SELECT VERSION();" || echo "⚠️ MySQL not responding"
+          echo "🧠 Checking Mongo..."
+          mongo --host $MONGO_HOST --port $MONGO_PORT --eval "db.runCommand({ ping: 1 })" || echo "⚠️ Mongo not responding"
+        continue-on-error: true
+
+      - name: ⏳ Wait for MySQL to be ready
+        run: |
+          echo "Waiting for MySQL to be ready..."
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 --silent; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "MySQL not ready yet... ($i)"
+            sleep 2
+          done
+
+      - name: 🔧 Patch MySQL auth plugin
+        run: |
+          echo "Applying mysql_native_password fix..."
+          docker exec "${{ job.services.mysql.id }}" \
+            mysql -uroot -proot -e \
+            "ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'root';"
+
+      - name: 🛠 Initialize MySQL Test Databases
+        run: |
+          echo "Creating required test databases..."
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -e "CREATE DATABASE IF NOT EXISTS maatify_main;"
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -e "CREATE DATABASE IF NOT EXISTS maatify_logs;"
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -e "CREATE DATABASE IF NOT EXISTS maatify_dev;"
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -e "CREATE DATABASE IF NOT EXISTS maatify;"
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -e "CREATE DATABASE IF NOT EXISTS maatify_test;"
+
+      - name: Export MySQL ENV to PHP
+        run: |
+          echo "MYSQL_USER=root" >> $GITHUB_ENV
+          echo "MYSQL_PASS=root" >> $GITHUB_ENV
+          echo "MYSQL_MAIN_USER=root" >> $GITHUB_ENV
+          echo "MYSQL_MAIN_PASS=root" >> $GITHUB_ENV
+
+      - name: Run PHPStan
+        id: phpstan
+        run: |
+          (
+            set +e
+            composer analyse > phpstan_output.txt
+            ANALYSE_EXIT=$?
+            echo "phpstan_exit=$ANALYSE_EXIT" >> $GITHUB_OUTPUT
+
+            ERRORS=$(grep -Eo "Found ([0-9]+) errors" phpstan_output.txt | grep -Eo "[0-9]+")
+            if [ -z "$ERRORS" ]; then ERRORS=0; fi
+
+            echo "phpstan_errors=$ERRORS" >> $GITHUB_OUTPUT
+          )
+          echo "PHPStan step completed without failing CI."
+
+      - name: 🧪 Run PHPUnit Tests
+        id: tests
+        run: |
+          vendor/bin/phpunit --configuration phpunit.xml.dist | tee phpunit.log
+        continue-on-error: true
+
+      - name: 🧾 Summary Report
+        if: always()
+        run: |
+          echo "### 🧾 Adapter Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Environment: $APP_ENV" >> $GITHUB_STEP_SUMMARY
+          echo "🧱 Redis Host: $REDIS_HOST" >> $GITHUB_STEP_SUMMARY
+          echo "🗄️ MySQL Host: $MYSQL_HOST" >> $GITHUB_STEP_SUMMARY
+          echo "📁 Mongo Host: $MONGO_HOST" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          tail -n 20 phpunit.log >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if grep -q "FAILURES!" phpunit.log; then
+            echo "❌ Some tests failed." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All tests passed successfully." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.phpstan.outputs.phpstan_errors }}" -eq 0 ]; then
+            echo "🧹 PHPStan: Passed (0 errors)." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ PHPStan: ${{ steps.phpstan.outputs.phpstan_errors }} errors detected." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📲 Notify Telegram
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_CI_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CI_CHAT_ID }}
+        run: |
+
+          START_TS=$(date -u -d "$GH_START_ISO" +%s)
+
+          END_TS=$(date +%s)
+
+          START_TIME=$(date -u -d "@$START_TS" +"%H:%M:%S UTC")
+
+          END_TIME=$(date -u +"%H:%M:%S UTC")
+
+          DURATION=$((END_TS - START_TS))
+
+          if [ "$DURATION" -lt 60 ]; then
+          DURATION_STR="${DURATION}s"
+          else
+          DURATION_STR="$(($DURATION / 60))m $(($DURATION % 60))s"
+          fi
+
+          echo "Start: $START_TIME"
+          echo "End: $END_TIME"
+          echo "Duration: $DURATION_STR"
+
+          STATUS="✅ Tests passed successfully!"
+          COLOR="🟢"
+
+          HEADER="Maatify CI Report (maatify/data-adapters)"
+          if grep -q "FAILURES!" phpunit.log || [ "${{ job.status }}" != "success" ]; then
+            STATUS="❌ Some tests failed. Please review the log."
+            COLOR="🔴"
+            HEADER="Maatify CI Alert (maatify/data-adapters)"
+          fi
+
+          PROJECT="maatify/data-adapters"
+          BRANCH="$GITHUB_REF_NAME"
+          ACTOR="$GITHUB_ACTOR"
+          URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          PHPSTAN_ERRORS="${{ steps.phpstan.outputs.phpstan_errors }}"
+
+          if [ "$PHPSTAN_ERRORS" -eq 0 ]; then
+          PHPSTAN_SUMMARY="🧹 <b>PHPStan:</b> Passed (0 errors)"
+          else
+          PHPSTAN_SUMMARY="🧹 <b>PHPStan:</b> ${PHPSTAN_ERRORS} errors detected"
+          fi
+
+          MESSAGE="📢 <b>${HEADER}</b>
+
+          ${COLOR} ${STATUS}
+
+          ${PHPSTAN_SUMMARY}
+
+          📦 <b>Project:</b> ${PROJECT}
+          🧱 <b>Branch:</b> ${BRANCH}
+          👷‍♂️ <b>Committer:</b> ${ACTOR}
+
+
+          ⏱ <b>Start:</b> ${START_TIME}
+          🕒 <b>End:</b> ${END_TIME}
+          📈 <b>Duration:</b> ${DURATION_STR}
+
+
+          🔗 <a href='${URL}'>View Run Log</a>"
+
+
+          echo "📨 Sending Telegram JSON notification..."
+          PAYLOAD=$(jq -n \
+            --arg chat_id "$TELEGRAM_CHAT_ID" \
+            --arg text "$MESSAGE" \
+            --arg parse_mode "HTML" \
+            '{chat_id: $chat_id, text: $text, parse_mode: $parse_mode}')
+
+          RESPONSE=$(curl -s -o /tmp/tg_resp.json -w "%{http_code}" \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "⚠️ Telegram notification failed (HTTP $RESPONSE)" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/tg_resp.json >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Telegram notification sent successfully." >> $GITHUB_STEP_SUMMARY
+          fi

@@ -1,0 +1,269 @@
+name: Run Adapter Tests
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      GH_START_ISO: ${{ github.event.head_commit.timestamp }}
+      APP_ENV: testing
+
+      # Redis (Fake adapters still expect DSNs)
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      REDIS_PASS: ""
+      REDIS_MAIN_DSN: "redis://127.0.0.1:6379"
+
+      # Mongo (Fake adapter expects DSNs)
+      MONGO_HOST: 127.0.0.1
+      MONGO_PORT: 27017
+      MONGO_MAIN_DSN: "mongodb://127.0.0.1:27017/maatify"
+
+      # MySQL (Fake adapter still reads DSN)
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASS: root
+      MYSQL_DB: maatify_dev
+      MYSQL_DSN: "mysql:host=127.0.0.1;dbname=maatify_dev;charset=utf8mb4"
+
+    services:
+      redis:
+        image: redis:7
+        ports: [ "6379:6379" ]
+
+      mongo:
+        image: mongo:7
+        ports: [ "27017:27017" ]
+
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: maatify_dev
+          MYSQL_AUTHENTICATION_PLUGIN: mysql_native_password
+        ports:
+          - "3306:3306"
+
+    steps:
+      # ---------------------------------------------
+      # 1) Checkout
+      # ---------------------------------------------
+      - uses: actions/checkout@v4
+
+      # ---------------------------------------------
+      # 2) Explicit ENV Injection
+      # ---------------------------------------------
+      - name: Inject Maatify Test Environment
+        run: |
+          echo "APP_ENV=testing" >> $GITHUB_ENV
+
+          echo "REDIS_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "REDIS_MAIN_DSN=redis://127.0.0.1:6379" >> $GITHUB_ENV
+
+          echo "MONGO_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "MONGO_MAIN_DSN=mongodb://127.0.0.1:27017/maatify" >> $GITHUB_ENV
+
+          echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "MYSQL_USER=root" >> $GITHUB_ENV
+          echo "MYSQL_PASS=root" >> $GITHUB_ENV
+          echo "MYSQL_DSN=mysql:host=127.0.0.1;dbname=maatify_dev;charset=utf8mb4" >> $GITHUB_ENV
+
+      # ---------------------------------------------
+      # 3) PHP Setup
+      # ---------------------------------------------
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      # ---------------------------------------------
+      # 4) Debug (Optional but useful)
+      # ---------------------------------------------
+      - name: 🔍 Debug Connections
+        run: |
+          echo "🧩 Environment: $APP_ENV"
+          redis-cli -h $REDIS_HOST ping || echo "⚠️ Redis not responding"
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -e "SELECT VERSION();" || echo "⚠️ MySQL not responding"
+          mongo --host $MONGO_HOST --port 27017 --eval "db.runCommand({ ping: 1 })" || echo "⚠️ Mongo not responding"
+        continue-on-error: true
+
+      # ---------------------------------------------
+      # 5) Wait MySQL Ready
+      # ---------------------------------------------
+      - name: ⏳ Wait for MySQL to be ready
+        run: |
+          for i in {1..20}; do
+            if mysqladmin ping -h 127.0.0.1 --silent; then
+              echo "MySQL ready!"
+              break
+            fi
+            echo "MySQL not ready ($i)"
+            sleep 2
+          done
+
+      - name: 🔧 Patch MySQL auth plugin
+        run: |
+          docker exec "${{ job.services.mysql.id }}" \
+            mysql -uroot -proot -e \
+            "ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'root';"
+
+      # ---------------------------------------------
+      # 6) Create Databases
+      # ---------------------------------------------
+      - name: 🛠 Initialize MySQL Databases
+        run: |
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -e "CREATE DATABASE IF NOT EXISTS maatify_dev;"
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -e "CREATE DATABASE IF NOT EXISTS maatify_main;"
+          mysql -h $MYSQL_HOST -u$MYSQL_USER -p$MYSQL_PASS -e "CREATE DATABASE IF NOT EXISTS maatify_test;"
+
+      # ---------------------------------------------
+      # 7) PHPStan
+      # ---------------------------------------------
+      - name: Run PHPStan
+        id: phpstan
+        run: |
+          (
+            set +e
+            composer analyse > phpstan_output.txt
+            EXIT=$?
+            echo "phpstan_exit=$EXIT" >> $GITHUB_OUTPUT
+            ERRORS=$(grep -Eo "Found ([0-9]+) errors" phpstan_output.txt | grep -Eo "[0-9]+")
+            if [ -z "$ERRORS" ]; then ERRORS=0; fi
+            echo "phpstan_errors=$ERRORS" >> $GITHUB_OUTPUT
+          )
+
+      # ---------------------------------------------
+      # 8) PHPUnit
+      # ---------------------------------------------
+      - name: 🧪 Run PHPUnit Tests
+        id: tests
+        run: |
+          vendor/bin/phpunit --configuration phpunit.xml | tee phpunit.log
+        continue-on-error: true
+
+      # ---------------------------------------------
+      # 9) Summary
+      # ---------------------------------------------
+      - name: 🧾 Summary Report
+        if: always()
+        run: |
+          echo "### 🧾 Adapter Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "✔ PHPStan Errors: ${{ steps.phpstan.outputs.phpstan_errors }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          tail -n 20 phpunit.log >> $GITHUB_STEP_SUMMARY
+
+          tail -n 20 phpunit.log >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if grep -q "FAILURES!" phpunit.log; then
+            echo "❌ Some tests failed." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ All tests passed successfully." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.phpstan.outputs.phpstan_errors }}" -eq 0 ]; then
+            echo "🧹 PHPStan: Passed (0 errors)." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ PHPStan: ${{ steps.phpstan.outputs.phpstan_errors }} errors detected." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # ---------------------------------------------
+      # 10) Telegram Notification
+      # ---------------------------------------------
+      - name: 📲 Notify Telegram
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_CI_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CI_CHAT_ID }}
+        run: |
+
+          START_TS=$(date -u -d "$GH_START_ISO" +%s)
+
+          END_TS=$(date +%s)
+
+          START_TIME=$(date -u -d "@$START_TS" +"%H:%M:%S UTC")
+
+          END_TIME=$(date -u +"%H:%M:%S UTC")
+
+          DURATION=$((END_TS - START_TS))
+
+          if [ "$DURATION" -lt 60 ]; then
+          DURATION_STR="${DURATION}s"
+          else
+          DURATION_STR="$(($DURATION / 60))m $(($DURATION % 60))s"
+          fi
+
+          echo "Start: $START_TIME"
+          echo "End: $END_TIME"
+          echo "Duration: $DURATION_STR"
+
+          STATUS="✅ Tests passed successfully!"
+          COLOR="🟢"
+
+          HEADER="Maatify CI Report (maatify/data-fakes)"
+          if grep -q "FAILURES!" phpunit.log || [ "${{ job.status }}" != "success" ]; then
+            STATUS="❌ Some tests failed. Please review the log."
+            COLOR="🔴"
+            HEADER="Maatify CI Alert (maatify/data-fakes)"
+          fi
+
+          PROJECT="maatify/data-fakes"
+          BRANCH="$GITHUB_REF_NAME"
+          ACTOR="$GITHUB_ACTOR"
+          URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          PHPSTAN_ERRORS="${{ steps.phpstan.outputs.phpstan_errors }}"
+
+          if [ "$PHPSTAN_ERRORS" -eq 0 ]; then
+          PHPSTAN_SUMMARY="🧹 <b>PHPStan:</b> Passed (0 errors)"
+          else
+          PHPSTAN_SUMMARY="🧹 <b>PHPStan:</b> ${PHPSTAN_ERRORS} errors detected"
+          fi
+
+          MESSAGE="📢 <b>${HEADER}</b>
+
+          ${COLOR} ${STATUS}
+
+          ${PHPSTAN_SUMMARY}
+
+          📦 <b>Project:</b> ${PROJECT}
+          🧱 <b>Branch:</b> ${BRANCH}
+          👷‍♂️ <b>Committer:</b> ${ACTOR}
+
+
+          ⏱ <b>Start:</b> ${START_TIME}
+          🕒 <b>End:</b> ${END_TIME}
+          📈 <b>Duration:</b> ${DURATION_STR}
+
+
+          🔗 <a href='${URL}'>View Run Log</a>"
+
+
+          echo "📨 Sending Telegram JSON notification..."
+          PAYLOAD=$(jq -n \
+            --arg chat_id "$TELEGRAM_CHAT_ID" \
+            --arg text "$MESSAGE" \
+            --arg parse_mode "HTML" \
+            '{chat_id: $chat_id, text: $text, parse_mode: $parse_mode}')
+
+          RESPONSE=$(curl -s -o /tmp/tg_resp.json -w "%{http_code}" \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "⚠️ Telegram notification failed (HTTP $RESPONSE)" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/tg_resp.json >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Telegram notification sent successfully." >> $GITHUB_STEP_SUMMARY
+          fi

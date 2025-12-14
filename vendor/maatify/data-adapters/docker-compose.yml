@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  redis:
+    image: redis:7
+    container_name: maatify-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    container_name: maatify-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./storage/mongo:/data/db
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8
+    container_name: maatify-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: maatify_dev
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./storage/mysql:/var/lib/mysql
+    restart: unless-stopped

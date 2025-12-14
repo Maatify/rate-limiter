@@ -1,0 +1,178 @@
+name: 🧠 Maatify Common – CI (PHP 8.4)
+
+on:
+  push:
+    branches: [ main, dev, feature/** ]
+  pull_request:
+    branches: [ main, dev ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: 🔧 Build & Test (PHP 8.4)
+    runs-on: ubuntu-latest
+
+    env:
+      GH_START_ISO: ${{ github.event.head_commit.timestamp }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [ '8.4' ]
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, intl, json, redis
+          coverage: xdebug
+          tools: composer:v2
+          ini-values: |
+            display_errors=On
+            error_reporting=E_ALL
+
+      - name: 🧩 Validate Composer
+        run: composer validate --strict
+
+      - name: 📦 Install Dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress --no-suggest
+
+      - name: Run PHPStan
+        id: phpstan
+        run: |
+          (
+            set +e
+            composer analyse > phpstan_output.txt
+            ANALYSE_EXIT=$?
+            echo "phpstan_exit=$ANALYSE_EXIT" >> $GITHUB_OUTPUT
+
+            ERRORS=$(grep -Eo "Found ([0-9]+) errors" phpstan_output.txt | grep -Eo "[0-9]+")
+            if [ -z "$ERRORS" ]; then ERRORS=0; fi
+
+            echo "phpstan_errors=$ERRORS" >> $GITHUB_OUTPUT
+          )
+          echo "PHPStan step completed without failing CI."
+
+      - name: 🧹 Code Style (PHP-CS-Fixer)
+        run: |
+          if [ -f vendor/bin/php-cs-fixer ]; then
+            vendor/bin/php-cs-fixer fix --dry-run --diff || true
+          else
+            echo "⚠️ php-cs-fixer not installed – skipping"
+          fi
+
+      - name: 🔍 Static Analysis (PHPStan)
+        run: |
+          if [ -f vendor/bin/phpstan ]; then
+            vendor/bin/phpstan analyse src --level=max || true
+          else
+            echo "⚠️ PHPStan not installed – skipping"
+          fi
+
+      - name: 🧪 Run PHPUnit Tests
+        run: |
+          if [ -f vendor/bin/phpunit ]; then
+            vendor/bin/phpunit --configuration phpunit.xml --colors=always --testdox
+          else
+            echo "⚠️ PHPUnit not installed – skipping"
+          fi
+
+      - name: 📤 Upload Coverage to Artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpunit-coverage-report
+          path: .phpunit.cache/
+
+      - name: 📲 Notify Telegram
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_CI_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CI_CHAT_ID }}
+        run: |
+
+          START_TS=$(date -u -d "$GH_START_ISO" +%s)
+          END_TS=$(date +%s)
+
+          START_TIME=$(date -u -d "@$START_TS" +"%H:%M:%S UTC")
+          END_TIME=$(date -u +"%H:%M:%S UTC")
+          DURATION=$((END_TS - START_TS))
+
+          if [ "$DURATION" -lt 60 ]; then
+            DURATION_STR="${DURATION}s"
+          else
+            DURATION_STR="$(($DURATION / 60))m $(($DURATION % 60))s"
+          fi
+
+          STATUS="✅ Tests passed successfully!"
+          COLOR="🟢"
+          HEADER="Maatify CI Report"
+
+          if grep -q "FAILURES!" phpunit.log || [ "${{ job.status }}" != "success" ]; then
+            STATUS="❌ Some tests failed. Please review the log."
+            COLOR="🔴"
+            HEADER="Maatify CI Alert"
+          fi
+
+          PROJECT="maatify/common"
+          BRANCH="$GITHUB_REF_NAME"
+          ACTOR="$GITHUB_ACTOR"
+          URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          PHPSTAN_ERRORS="${{ steps.phpstan.outputs.phpstan_errors }}"
+
+          if [ "$PHPSTAN_ERRORS" -eq 0 ]; then
+          PHPSTAN_SUMMARY="🧹 <b>PHPStan:</b> Passed (0 errors)"
+          else
+          PHPSTAN_SUMMARY="🧹 <b>PHPStan:</b> ${PHPSTAN_ERRORS} errors detected"
+          fi
+
+          MESSAGE="📢 <b>${HEADER}</b>
+
+          ${COLOR} ${STATUS}
+
+          ${PHPSTAN_SUMMARY}
+
+          📦 <b>Project:</b> ${PROJECT}
+          🧱 <b>Branch:</b> ${BRANCH}
+          👷‍♂️ <b>Committer:</b> ${ACTOR}
+
+          ⏱ <b>Start:</b> ${START_TIME}
+          🕒 <b>End:</b> ${END_TIME}
+          📈 <b>Duration:</b> ${DURATION_STR}
+
+          🔗 <a href='${URL}'>View Run Log</a>"
+
+          PAYLOAD=$(jq -n \
+          --arg chat_id "$TELEGRAM_CHAT_ID" \
+          --arg text "$MESSAGE" \
+          --arg parse_mode "HTML" \
+          '{chat_id: $chat_id, text: $text, parse_mode: $parse_mode}')
+
+          RESPONSE=$(curl -s -o /tmp/tg_resp.json -w "%{http_code}" \
+          -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          -H "Content-Type: application/json" \
+          -d "$PAYLOAD")
+
+          echo "Raw Telegram Response (HTTP $RESPONSE):"
+          cat /tmp/tg_resp.json
+
+          if [ "$RESPONSE" -ne 200 ]; then
+          echo "⚠️ Telegram notification failed (HTTP $RESPONSE)" >> $GITHUB_STEP_SUMMARY
+          cat /tmp/tg_resp.json >> $GITHUB_STEP_SUMMARY
+          else
+          echo "✅ Telegram notification sent successfully." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 📊 Summary
+        if: always()
+        run: |
+          echo "✅ PHP Version : ${{ matrix.php }}" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Composer dependencies installed" >> $GITHUB_STEP_SUMMARY
+          echo "🧠 Static analysis + tests completed" >> $GITHUB_STEP_SUMMARY

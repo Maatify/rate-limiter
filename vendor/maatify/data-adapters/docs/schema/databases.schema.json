@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Maatify Data Adapters Registry Schema",
+  "type": "object",
+  "properties": {
+    "databases": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z0-9_]+$": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9_]+$": {
+              "type": "object",
+              "properties": {
+                "dsn": { "type": "string" },
+                "username": { "type": "string" },
+                "password": { "type": "string" },
+                "options":  { "type": "object" },
+                "database": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

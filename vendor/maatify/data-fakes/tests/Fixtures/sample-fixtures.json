@@ -1,0 +1,20 @@
+{
+  "mysql": {
+    "users": [
+      {"id": 1, "name": "Alice"},
+      {"id": 2, "name": "Bob"}
+    ]
+  },
+  "mongo": {
+    "products": [
+      {"_id": "p1", "price": 100},
+      {"_id": "p2", "price": 150}
+    ]
+  },
+  "redis": {
+    "strings": {"token": "abc"},
+    "hashes": {"profile": {"name": "Alice", "role": "admin"}},
+    "lists": {"queue": ["job1", "job2"]},
+    "counters": {"hits": 5}
+  }
+}

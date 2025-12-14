@@ -1,0 +1,30 @@
+version: "3.9"
+services:
+  bootstrap:
+    build: .
+    container_name: maatify-bootstrap
+    environment:
+      APP_ENV: testing
+      CI: true
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - mysql
+      - mongo
+    command: composer run-script test
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: maatify_test
+    ports:
+      - "3306:3306"
