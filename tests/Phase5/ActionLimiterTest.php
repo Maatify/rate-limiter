@@ -40,7 +40,7 @@ final class ActionLimiterTest extends TestCase
 
         $this->driver->expects($this->exactly(2))
             ->method('attempt')
-            ->willReturnCallback(function (string $key, RateLimitActionInterface $act, PlatformInterface $plt) use (&$callCount, $action, $platform) {
+            ->willReturnCallback(function (string $key, RateLimitActionInterface $act, PlatformInterface $plt) use (&$callCount) {
                 $callCount++;
                 if ($callCount === 1) {
                     // Global passes
@@ -66,7 +66,7 @@ final class ActionLimiterTest extends TestCase
 
         $this->driver->expects($this->exactly(2))
             ->method('attempt')
-            ->willReturnCallback(function (string $key, RateLimitActionInterface $act, PlatformInterface $plt) use (&$callCount, $action, $platform) {
+            ->willReturnCallback(function (string $key, RateLimitActionInterface $act, PlatformInterface $plt) use (&$callCount) {
                 $callCount++;
                 if ($callCount === 1) {
                     // Global passes
