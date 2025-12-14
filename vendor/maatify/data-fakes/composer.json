@@ -1,0 +1,58 @@
+{
+  "name": "maatify/data-fakes",
+  "description": "Complete fake simulation layer for MySQL, DBAL, Redis, and Mongo adapters.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "php",
+    "testing",
+    "fake",
+    "mock",
+    "in-memory",
+    "adapter",
+    "mysql",
+    "redis",
+    "mongodb",
+    "mongo",
+    "dbal",
+    "database",
+    "storage",
+    "simulation",
+    "unit-test",
+    "integration-test",
+    "phpstan",
+    "phpunit",
+    "maatify",
+    "maatify-dev",
+    "data-adapters",
+    "fake-database",
+    "mock-database"
+  ],
+
+  "autoload": {
+    "psr-4": {
+      "Maatify\\DataFakes\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=8.4",
+    "maatify/common": "^1.0",
+    "maatify/data-adapters": "^1.0"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Maatify\\DataFakes\\Tests\\": "tests/"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.0",
+    "phpstan/phpstan": "^1.10",
+    "friendsofphp/php-cs-fixer": "^3.0"
+  },
+  "scripts": {
+    "analyse": "vendor/bin/phpstan analyse src tests --level=max",
+    "test": "vendor/bin/phpunit",
+    "format": "vendor/bin/php-cs-fixer fix"
+
+  }
+}

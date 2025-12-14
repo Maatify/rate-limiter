@@ -1,0 +1,43 @@
+{
+  "name": "maatify/common",
+  "description": "Common DTOs and helpers for all maatify libraries",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Maatify.dev",
+      "email": "support@maatify.dev"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Maatify\\Common\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=8.4",
+    "ext-mbstring": "*",
+    "ext-intl": "*",
+    "ezyang/htmlpurifier": "^4.19",
+    "maatify/psr-logger": "^1.0"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Maatify\\Common\\Tests\\": "tests/"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.0",
+    "phpstan/phpstan": "^1.11",
+    "mongodb/mongodb": "^2.0",
+    "predis/predis": "^2.3",
+    "doctrine/dbal": "^4.3",
+    "friendsofphp/php-cs-fixer": "^3.89"
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit --testdox",
+    "analyse": "phpstan analyse src --level=max",
+    "format": "php-cs-fixer fix"
+
+  }
+}
