@@ -1,220 +1,161 @@
-# 🧩 Phase 5 — Exponential Backoff & Global Limit
+# 🧩 Phase 5 — Global Enforcement & Backoff (Resolver-Level)
 
 [![Maatify Rate Limiter](https://img.shields.io/badge/Maatify-Rate--Limiter-blue?style=for-the-badge)](https://github.com/Maatify/rate-limiter)
 [![Maatify Ecosystem](https://img.shields.io/badge/Maatify-Ecosystem-9C27B0?style=for-the-badge)](https://github.com/Maatify)
 
+---
+
 ## 🎯 Objective
 
-This phase introduces **adaptive rate-limiting** with an **exponential backoff algorithm** and a **global per-IP limit** shared across all actions.
-The goal is to make the limiter more intelligent and fair — *slowing down* abusive clients instead of simply blocking them.
+This phase introduces **resolver-level enforcement** for rate limiting, combining:
+
+* **Global identifier-based limiting** (applied before any action)
+* **Centralized exponential backoff**
+* **Strict separation of concerns** between drivers and enforcement logic
+
+The goal is to make rate limiting **predictable, testable, and extensible**
+without leaking behavioral logic into storage drivers.
+
+---
+
+## 🧠 Architectural Shift (Important)
+
+> **No driver implements backoff or blocking escalation logic.**
+> **All enforcement happens at resolver level.**
+
+This phase finalizes the following rules:
+
+* Drivers = counting + TTL only
+* Resolver = orchestration + enforcement
+* Backoff = strategy owned by resolver
+* Environment variables are **NOT accessed** inside core logic
 
 ---
 
 ## ⚙️ Implementation Overview
 
-### 1️⃣ Exponential Backoff Algorithm
+### 1️⃣ Centralized Exponential Backoff
 
-Each time a client exceeds its limit, the cooldown increases exponentially until reaching a configured cap.
+Backoff is implemented as a **stateless policy**:
 
-```php
-private function calculateBackoff(int $attempts, int $base = 2, int $max = 3600): int
-{
-    return min(pow($base, $attempts), $max);
-}
-```
+* Owned by the resolver
+* Applied only after a limit is exceeded
+* Configurable via constructor (not env)
 
-| Attempts | Delay (sec) |
-|----------|-------------|
-| 1        | 2           |
-| 2        | 4           |
-| 3        | 8           |
-| 4        | 16          |
-| 5        | 32          |
+**Default implementation:** `ExponentialBackoffPolicy`
 
-🧠 `BACKOFF_BASE` and `BACKOFF_MAX` are fully configurable in `.env`.
+Characteristics:
+
+* Exponential growth
+* Upper bound capped by reset window
+* No persistence inside drivers
 
 ---
 
-### 2️⃣ Adaptive Backoff Application (Example – Redis Driver)
+### 2️⃣ Global Limiter (Overlay Layer)
 
-```php
-private function applyBackoff(string $key, int $attempts): RateLimitStatusDTO
-{
-    $backoff = $this->calculateBackoff($attempts);
-    $this->redis->expire($key, $backoff);
+A **global limiter** is enforced **before** any action-based limiter.
 
-    $nextAllowed = (new DateTimeImmutable())
-        ->modify("+{$backoff} seconds")
-        ->format('Y-m-d H:i:s');
+* Identifier-only (e.g. IP, client id)
+* Independent of action or platform
+* Uses the same underlying drivers
 
-    return new RateLimitStatusDTO(
-        limit: 0,
-        remaining: 0,
-        resetAfter: $backoff,
-        retryAfter: $backoff,
-        blocked: true,
-        backoffSeconds: $backoff,
-        nextAllowedAt: $nextAllowed
-    );
-}
+Execution order (mandatory):
+
+```
+Global limiter → Action limiter → Backoff
 ```
 
-Each repeated violation doubles the wait time (2 s → 4 s → 8 s → 16 s → ...).
-Equivalent expiration logic exists in MongoDB (`expiresAt`) and MySQL (`expires_at`).
+If the global limiter blocks:
+
+* Action limiter is **not executed**
+* Result source = `global`
 
 ---
 
-### 3️⃣ Global Per-IP Limiter
+### 3️⃣ Action Limiter (Unchanged Responsibility)
 
-A shared Redis key:
+Action-based limiters:
 
-```
-rate:ip:{ip}
-```
+* Track requests per `(identifier + action)`
+* Do **not** know about:
 
-tracks **total requests per IP** across all actions.
-If an IP exceeds `GLOBAL_RATE_LIMIT` within `GLOBAL_RATE_WINDOW` seconds, it is throttled according to the exponential backoff.
+    * Global limits
+    * Backoff logic
+    * Escalation rules
 
-This ensures that no single IP can overload the system even if individual module limits are generous.
-
----
-
-### 4️⃣ Updated `.env.example`
-
-```dotenv
-# Global IP limit
-GLOBAL_RATE_LIMIT=1000
-GLOBAL_RATE_WINDOW=3600
-
-# Exponential backoff
-BACKOFF_BASE=2
-BACKOFF_MAX=3600
-```
+Result source = `action`
 
 ---
 
-### 5️⃣ DTO Enhancements — `RateLimitStatusDTO`
+## 📦 RateLimitStatusDTO — Active Fields
 
-| Field            | Type          | Description                         |
-|------------------|---------------|-------------------------------------|
-| `backoffSeconds` | int / null    | Adaptive delay duration (seconds)   |
-| `nextAllowedAt`  | string / null | UTC timestamp when retry is allowed |
+`RateLimitStatusDTO` now carries **full enforcement context**:
 
-Added helper:
+| Field            | Description                          |
+|------------------|--------------------------------------|
+| `limit`          | Configured limit                     |
+| `remaining`      | Remaining attempts (may be negative) |
+| `resetAfter`     | Seconds until counter reset          |
+| `retryAfter`     | Seconds until retry is allowed       |
+| `blocked`        | Final enforcement decision           |
+| `backoffSeconds` | Applied backoff delay                |
+| `nextAllowedAt`  | UTC timestamp                        |
+| `source`         | `global` or `action`                 |
 
-```php
-public static function fromArray(array $data): self
-```
-
-Example:
-
-```php
-$dto = RateLimitStatusDTO::fromArray(json_decode($redis->get('rate:ip:501'), true));
-```
-
----
-
-### 6️⃣ Enhanced Exception Metadata
-
-`TooManyRequestsException` now exposes:
-
-```php
-$e->getRetryAfter();     // seconds until next try
-$e->getNextAllowedAt();  // timestamp when retry is allowed
-```
-
-Allowing standardized 429 responses:
-
-```json
-{
-  "error": "Too many requests",
-  "retry_after": 16,
-  "next_allowed_at": "2025-11-07 12:01:45"
-}
-```
+> ⚠️ `remaining` may be negative by design
+> Consumers MUST rely on `blocked`, not `remaining`.
 
 ---
 
-### 7️⃣ Unit Tests — `tests/BackoffTest.php`
+## 🚨 Exception Propagation
 
-```php
-public function testExponentialBackoffCalculation(): void
-{
-    $resolver = new RateLimiterResolver(['driver' => 'redis']);
-    $limiter = $resolver->resolve();
+`TooManyRequestsException` now carries enforcement metadata:
 
-    $method = new ReflectionMethod($limiter, 'calculateBackoff');
-    $method->setAccessible(true);
+* Attached `RateLimitStatusDTO`
+* Helper accessors:
 
-    $this->assertSame(2, $method->invoke($limiter, 1));
-    $this->assertSame(4, $method->invoke($limiter, 2));
-    $this->assertSame(8, $method->invoke($limiter, 3));
-    $this->assertLessThanOrEqual(3600, $method->invoke($limiter, 10));
-}
+    * `getRetryAfter()`
+    * `getNextAllowedAt()`
 
-public function testNextAllowedAtFormat(): void
-{
-    $resolver = new RateLimiterResolver(['driver' => 'redis']);
-    $limiter = $resolver->resolve();
-
-    $dto = (new ReflectionMethod($limiter, 'applyBackoff'))
-        ->invoke($limiter, 'rate:test', 3);
-
-    $this->assertMatchesRegularExpression(
-        '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/',
-        $dto->nextAllowedAt
-    );
-}
-```
-
-✅ Covers exponential growth logic and timestamp format.
+This allows consistent 429 responses across all drivers.
 
 ---
 
-### 8️⃣ Example Usage
+## 🧪 Testing Status
 
-```php
-$resolver = new RateLimiterResolver([
-    'driver' => 'redis',
-    'redis_host' => '127.0.0.1',
-    'redis_port' => 6379,
-]);
+* **No tests are included in this phase**
+* Tests are delegated to **Jules** as a separate execution step
+* Coverage is **pending**
 
-$limiter = $resolver->resolve();
-$key = 'ip:' . $_SERVER['REMOTE_ADDR'];
-
-try {
-    $status = $limiter->attempt($key, RateLimitActionEnum::LOGIN, PlatformEnum::WEB);
-    echo "✅ Allowed. Remaining: {$status->remaining}";
-} catch (TooManyRequestsException $e) {
-    echo "⛔ Retry after {$e->getRetryAfter()} s at {$e->getNextAllowedAt()}";
-}
-```
+This is intentional and aligned with the Quad-AI workflow.
 
 ---
 
-## 🧱 Summary of Enhancements
+## 🧱 Summary of Changes
 
-| Component          | Status | Description                             |
-|--------------------|--------|-----------------------------------------|
-| DTO update         | ✅      | Added `backoffSeconds`, `nextAllowedAt` |
-| Backoff logic      | ✅      | Exponential algorithm + Redis support   |
-| Global IP limiter  | ✅      | Cross-action limit layer                |
-| Exception metadata | ✅      | Added retryAfter + nextAllowedAt        |
-| Env config         | ✅      | Extended `.env.example`                 |
-| Tests              | ✅      | Added `BackoffTest`                     |
-| CI compatibility   | ✅      | Works in Docker test pipeline           |
-
----
-
-## 🚀 Next Phase
-
-**Phase 6 – Alerting & Logging**
-Integrate `maatify/psr-logger`, Telegram notifications, and security event tracking for rate-limit breaches.
+| Area           | Status | Notes                  |
+|----------------|--------|------------------------|
+| Global limiter | ✅      | Resolver-level overlay |
+| Backoff logic  | ✅      | Centralized, stateless |
+| Drivers        | ✅      | Storage-only           |
+| DTO            | ✅      | Phase 6–ready          |
+| Env usage      | ❌      | Removed from core      |
+| Tests          | ⏳      | Pending (Jules)        |
 
 ---
 
-✅ **Phase 5 Complete**
-The rate limiter now intelligently delays repeated abusive attempts and enforces a global per-IP throttle for smarter load control.
+## 🚀 Next Step
+
+**Phase 5 (Tests)**
+Behavioral tests, cross-driver invariants, and coverage enforcement.
+
+**Phase 6 (API Freeze)**
+Finalize DTO and public contracts.
+
+---
+
+> ⚠️ **Phase 5 is NOT complete until tests are finalized.**
+> Current status: **in progress (src completed, tests pending)**
 
 ---
