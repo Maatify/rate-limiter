@@ -29,6 +29,7 @@ final class RateLimitStatusDTOTest extends TestCase
             'blocked' => true,
             'backoff_seconds' => 15,
             'next_allowed_at' => '2025-01-01 12:00:00',
+            'source' => null,
         ];
 
         $this->assertSame($expected, $dto->toArray());
@@ -50,6 +51,7 @@ final class RateLimitStatusDTOTest extends TestCase
             'blocked' => false,
             'backoff_seconds' => null,
             'next_allowed_at' => null,
+            'source' => null,
         ];
 
         $this->assertSame($expected, $dto->toArray());
