@@ -130,6 +130,46 @@
     },
 
     {
+      "phase": "4.5",
+      "name": "Architectural Stabilization",
+      "status": "completed",
+      "type": "design-boundary-lock",
+      "summary": "Stabilize architectural boundaries, separate configuration ownership, prepare backoff and global limiter extension points, and make resolver fully testable without implementing new behavior.",
+      "changes": {
+        "added": {
+          "classes": [
+            "Maatify\\RateLimiter\\Config\\ActionRateLimitConfig",
+            "Maatify\\RateLimiter\\Config\\GlobalRateLimitConfig",
+            "Maatify\\RateLimiter\\Config\\Contracts\\ActionRateLimitConfigProviderInterface",
+            "Maatify\\RateLimiter\\Config\\Providers\\InMemoryActionRateLimitConfigProvider",
+            "Maatify\\RateLimiter\\Backoff\\BackoffPolicyInterface"
+          ]
+        },
+        "edited": {
+          "classes": [
+            "Maatify\\RateLimiter\\Resolver\\RateLimiterResolver",
+            "Maatify\\RateLimiter\\Drivers\\RedisRateLimiter",
+            "Maatify\\RateLimiter\\Drivers\\MongoRateLimiter",
+            "Maatify\\RateLimiter\\Drivers\\MySQLRateLimiter"
+          ]
+        },
+        "removed": {
+          "classes": [
+            "Maatify\\RateLimiter\\Config\\RateLimitConfig"
+          ]
+        }
+      },
+      "constraints": [
+        "No backoff logic implemented",
+        "No global limiter logic implemented",
+        "No env access inside core logic",
+        "No DTO field changes",
+        "Drivers remain storage-only",
+        "Resolver contains no infrastructure creation"
+      ],
+      "next_phase": "5.0"
+    },
+    {
       "id": "phase5",
       "version": "1.0.0",
       "status": "completed",

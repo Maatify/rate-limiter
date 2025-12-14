@@ -27,12 +27,13 @@
         ]
       }
     },
-
     "Maatify\\RateLimiter\\Drivers": {
       "RedisRateLimiter": {
         "kind": "class",
         "file": "src/Drivers/RedisRateLimiter.php",
-        "implements": ["Maatify\\RateLimiter\\Contracts\\RateLimiterInterface"],
+        "implements": [
+          "Maatify\\RateLimiter\\Contracts\\RateLimiterInterface"
+        ],
         "methods": [
           {
             "name": "__construct",
@@ -62,11 +63,12 @@
           }
         ]
       },
-
       "MongoRateLimiter": {
         "kind": "class",
         "file": "src/Drivers/MongoRateLimiter.php",
-        "implements": ["Maatify\\RateLimiter\\Contracts\\RateLimiterInterface"],
+        "implements": [
+          "Maatify\\RateLimiter\\Contracts\\RateLimiterInterface"
+        ],
         "methods": [
           {
             "name": "__construct",
@@ -96,11 +98,12 @@
           }
         ]
       },
-
       "MySQLRateLimiter": {
         "kind": "class",
         "file": "src/Drivers/MySQLRateLimiter.php",
-        "implements": ["Maatify\\RateLimiter\\Contracts\\RateLimiterInterface"],
+        "implements": [
+          "Maatify\\RateLimiter\\Contracts\\RateLimiterInterface"
+        ],
         "methods": [
           {
             "name": "__construct",
@@ -132,7 +135,6 @@
         ]
       }
     },
-
     "Maatify\\RateLimiter\\Config": {
       "RateLimitConfig": {
         "kind": "class",
@@ -157,7 +159,6 @@
         ]
       }
     },
-
     "Maatify\\RateLimiter\\Contracts": {
       "RateLimiterInterface": {
         "kind": "interface",
@@ -183,7 +184,6 @@
           }
         ]
       },
-
       "PlatformInterface": {
         "kind": "interface",
         "file": "src/Contracts/PlatformInterface.php",
@@ -195,7 +195,6 @@
           }
         ]
       },
-
       "RateLimitActionInterface": {
         "kind": "interface",
         "file": "src/Contracts/RateLimitActionInterface.php",
@@ -208,7 +207,6 @@
         ]
       }
     },
-
     "Maatify\\RateLimiter\\Enums": {
       "RateLimitActionEnum": {
         "kind": "enum",
@@ -220,7 +218,6 @@
           }
         ]
       },
-
       "PlatformEnum": {
         "kind": "enum",
         "file": "src/Enums/PlatformEnum.php",
@@ -232,7 +229,6 @@
         ]
       }
     },
-
     "Maatify\\RateLimiter\\Exceptions": {
       "TooManyRequestsException": {
         "kind": "class",
@@ -256,7 +252,6 @@
         ]
       }
     },
-
     "Maatify\\RateLimiter\\Middleware": {
       "RateLimitWebMiddleware": {
         "kind": "class",
@@ -280,7 +275,6 @@
           }
         ]
       },
-
       "RateLimitHeadersMiddleware": {
         "kind": "class",
         "file": "src/Middleware/RateLimitHeadersMiddleware.php",
@@ -296,7 +290,6 @@
         ]
       }
     },
-
     "Maatify\\RateLimiter\\Resolver": {
       "RateLimiterResolver": {
         "kind": "class",
@@ -318,6 +311,235 @@
             ]
           }
         ]
+      }
+    },
+    "Maatify\\SecurityGuard\\Config\\SecurityConfig": {
+      "type": "class",
+      "methods": {
+        "__construct": {
+          "visibility": "public",
+          "arguments": [
+            {
+              "name": "maxFailures",
+              "type": "int"
+            },
+            {
+              "name": "blockSeconds",
+              "type": "int"
+            }
+          ]
+        },
+        "maxFailures": {
+          "visibility": "public",
+          "return_type": "int",
+          "arguments": []
+        },
+        "blockSeconds": {
+          "visibility": "public",
+          "return_type": "int",
+          "arguments": []
+        }
+      }
+    },
+    "Maatify\\SecurityGuard\\Config\\SecurityConfigLoader": {
+      "type": "class",
+      "methods": {
+        "defaults": {
+          "visibility": "public",
+          "static": true,
+          "return_type": "Maatify\\SecurityGuard\\Config\\SecurityConfig",
+          "arguments": []
+        }
+      }
+    },
+    "Maatify\\RateLimiter\\Config\\ActionRateLimitConfig": {
+      "type": "class",
+      "methods": {
+        "__construct": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "void",
+          "arguments": [
+            {
+              "name": "limit",
+              "type": "int"
+            },
+            {
+              "name": "window",
+              "type": "int"
+            },
+            {
+              "name": "banTime",
+              "type": "int|null"
+            }
+          ]
+        },
+        "getLimit": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "int",
+          "arguments": []
+        },
+        "getWindow": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "int",
+          "arguments": []
+        },
+        "getBanTime": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "int|null",
+          "arguments": []
+        }
+      }
+    },
+    "Maatify\\RateLimiter\\Config\\GlobalRateLimitConfig": {
+      "type": "class",
+      "methods": {
+        "__construct": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "void",
+          "arguments": [
+            {
+              "name": "limit",
+              "type": "int"
+            },
+            {
+              "name": "window",
+              "type": "int"
+            },
+            {
+              "name": "banTime",
+              "type": "int|null"
+            }
+          ]
+        },
+        "getLimit": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "int",
+          "arguments": []
+        },
+        "getWindow": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "int",
+          "arguments": []
+        },
+        "getBanTime": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "int|null",
+          "arguments": []
+        }
+      }
+    },
+    "Maatify\\RateLimiter\\Config\\Contracts\\ActionRateLimitConfigProviderInterface": {
+      "type": "interface",
+      "methods": {
+        "getConfigForAction": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "Maatify\\RateLimiter\\Config\\ActionRateLimitConfig|null",
+          "arguments": [
+            {
+              "name": "action",
+              "type": "Maatify\\RateLimiter\\Enums\\RateLimitActionEnum"
+            }
+          ]
+        }
+      }
+    },
+    "Maatify\\RateLimiter\\Config\\Providers\\InMemoryActionRateLimitConfigProvider": {
+      "type": "class",
+      "methods": {
+        "__construct": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "void",
+          "arguments": [
+            {
+              "name": "configs",
+              "type": "array"
+            }
+          ]
+        },
+        "getConfigForAction": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "Maatify\\RateLimiter\\Config\\ActionRateLimitConfig|null",
+          "arguments": [
+            {
+              "name": "action",
+              "type": "Maatify\\RateLimiter\\Enums\\RateLimitActionEnum"
+            }
+          ]
+        }
+      }
+    },
+    "Maatify\\RateLimiter\\Backoff\\BackoffPolicyInterface": {
+      "type": "interface",
+      "methods": {
+        "calculateDelay": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "int|null",
+          "arguments": [
+            {
+              "name": "attempts",
+              "type": "int"
+            },
+            {
+              "name": "context",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "Maatify\\RateLimiter\\Resolver\\RateLimiterResolver": {
+      "type": "class",
+      "methods": {
+        "__construct": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "void",
+          "arguments": [
+            {
+              "name": "drivers",
+              "type": "array"
+            },
+            {
+              "name": "actionConfigProvider",
+              "type": "Maatify\\RateLimiter\\Config\\Contracts\\ActionRateLimitConfigProviderInterface"
+            },
+            {
+              "name": "globalConfig",
+              "type": "Maatify\\RateLimiter\\Config\\GlobalRateLimitConfig|null"
+            },
+            {
+              "name": "backoffPolicy",
+              "type": "Maatify\\RateLimiter\\Backoff\\BackoffPolicyInterface|null"
+            }
+          ]
+        },
+        "resolve": {
+          "visibility": "public",
+          "static": false,
+          "return_type": "Maatify\\RateLimiter\\DTO\\RateLimitStatusDTO",
+          "arguments": [
+            {
+              "name": "identifier",
+              "type": "string"
+            },
+            {
+              "name": "action",
+              "type": "Maatify\\RateLimiter\\Enums\\RateLimitActionEnum"
+            }
+          ]
+        }
       }
     }
   }
