@@ -122,7 +122,7 @@
       "id": "phase4.5",
       "title": "Architecture Stabilization",
       "version": "0.4.5",
-      "status": "pending",
+      "status": "completed",
       "summary": "Fix architectural boundaries before implementing global limiting and backoff features.",
       "tasks": [
         "Refactor RateLimitConfig into injectable immutable DTOs",
@@ -133,45 +133,68 @@
         "Achieve phpstan level max readiness"
       ],
       "depends_on": ["phase4"]
-    },
-    {
+    },{
       "id": "phase5",
       "title": "Exponential Backoff & Global Limit",
       "version": "1.0.0",
-      "status": "blocked",
-      "missing": [
-        "Global IP Limiter architecture definition",
-        "Clear separation between GlobalConfig and ActionConfig",
-        "Backoff policy abstraction",
-        "Stable RateLimitStatusDTO contract",
-        "Testable resolver architecture",
-        "Global limiter test suite"
-      ],
-      "blocked_by": "phase4.5",
-      "summary": "Adaptive backoff delays and global IP-based rate limiting.",
+      "status": "implemented",
+      "summary": "Adaptive backoff delays and global IP-based rate limiting (core logic implemented).",
+      "note": "Phase 5 core logic and tests are implemented, but real-world production usage alignment is not yet validated.",
       "tasks": [
         "Add exponential backoff algorithm (2ⁿ logic)",
         "Extend RateLimitStatusDTO with backoffSeconds and nextAllowedAt",
-        "Introduce global IP limiter rate:ip:{ip}",
-        "Add .env keys: GLOBAL_RATE_LIMIT, GLOBAL_RATE_WINDOW, BACKOFF_BASE, BACKOFF_MAX",
+        "Introduce global IP limiter overlay via enforcing resolver",
         "Enhance TooManyRequestsException with retry metadata",
-        "Update resolver and drivers to support backoff-aware responses"
+        "Update resolver to wrap drivers with enforcing layer"
       ],
       "tests": [
-        "BackoffTest",
-        "GlobalIpLimiterTest"
+        "BackoffPolicyTest",
+        "GlobalLimiterTest",
+        "ActionLimiterTest",
+        "ResolverWrappingTest"
       ],
       "outputs": [
-        "Backoff logic in all drivers",
+        "EnforcingRateLimiter",
+        "BackoffPolicy abstraction",
         "Enhanced RateLimitStatusDTO",
-        "Updated TooManyRequestsException"
+        "Extended TooManyRequestsException"
       ],
-      "depends_on": ["phase4"],
+      "depends_on": ["phase4.5"],
+      "blocks": ["phase6"],
       "architecture": [
-        "Adaptive delay escalation",
-        "Global limiter overlay"
+        "Global limiter as transparent overlay",
+        "Strategy-based backoff policy",
+        "Driver-agnostic enforcement"
       ]
     },
+    {
+      "id": "phase5.5",
+      "title": "Real Usage Alignment",
+      "version": "1.0.1",
+      "status": "pending",
+      "summary": "Align public examples and documentation with real production usage of the rate limiter.",
+      "goal": "Ensure that all examples reflect real, copy-paste production usage without fake drivers or simulated behavior.",
+      "tasks": [
+        "Replace educational examples with real Redis/MySQL/Mongo usage examples",
+        "Document real-world resolver wiring",
+        "Provide minimal copy-paste production snippets",
+        "Clearly separate educational vs production examples",
+        "Validate examples against actual drivers"
+      ],
+      "outputs": [
+        "Production-grade examples",
+        "Validated usage documentation",
+        "Clear public usage contract"
+      ],
+      "depends_on": ["phase5"],
+      "blocks": ["phase6"],
+      "architecture": [
+        "Truthful public API usage",
+        "No simulated drivers in production examples",
+        "Clear boundary between education and production"
+      ]
+    },
+
     {
       "id": "phase6",
       "title": "API Freeze & Stability Lock",
@@ -194,7 +217,7 @@
         "api-freeze-report.md",
         "Frozen core API declaration in README"
       ],
-      "depends_on": ["phase5"]
+      "depends_on": ["phase5.5"]
     },
     {
       "id": "phase7",
