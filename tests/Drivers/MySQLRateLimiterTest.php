@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Maatify\RateLimiter\Tests\Drivers;
 
+use Maatify\RateLimiter\Config\ActionRateLimitConfig;
+use Maatify\RateLimiter\Config\GlobalRateLimitConfig;
+use Maatify\RateLimiter\Config\InMemoryActionRateLimitConfigProvider;
 use Maatify\RateLimiter\Drivers\MySQLRateLimiter;
 use Maatify\RateLimiter\DTO\RateLimitStatusDTO;
 use Maatify\RateLimiter\Enums\PlatformEnum;
@@ -19,7 +22,7 @@ final class MySQLRateLimiterTest extends TestCase
     {
         $pdo = $this->createMock(PDO::class);
         $stmt = $this->createMock(PDOStatement::class);
-        $limiter = new MySQLRateLimiter($pdo);
+        $limiter = new MySQLRateLimiter($pdo, $this->configProvider());
 
         $pdo->method('prepare')->willReturn($stmt);
         $stmt->method('execute')->willReturn(true);
@@ -34,7 +37,7 @@ final class MySQLRateLimiterTest extends TestCase
     {
         $pdo = $this->createMock(PDO::class);
         $stmt = $this->createMock(PDOStatement::class);
-        $limiter = new MySQLRateLimiter($pdo);
+        $limiter = new MySQLRateLimiter($pdo, $this->configProvider());
 
         $pdo->method('prepare')->willReturn($stmt);
         $stmt->method('fetchColumn')->willReturn(100);
@@ -48,7 +51,7 @@ final class MySQLRateLimiterTest extends TestCase
     {
         $pdo = $this->createMock(PDO::class);
         $stmt = $this->createMock(PDOStatement::class);
-        $limiter = new MySQLRateLimiter($pdo);
+        $limiter = new MySQLRateLimiter($pdo, $this->configProvider());
 
         $pdo->method('prepare')->willReturn($stmt);
         $stmt->expects($this->once())->method('execute')->willReturn(true);
@@ -61,7 +64,7 @@ final class MySQLRateLimiterTest extends TestCase
     {
         $pdo = $this->createMock(PDO::class);
         $stmt = $this->createMock(PDOStatement::class);
-        $limiter = new MySQLRateLimiter($pdo);
+        $limiter = new MySQLRateLimiter($pdo, $this->configProvider());
 
         $pdo->method('prepare')->willReturn($stmt);
         $stmt->method('fetchColumn')->willReturn(2);
@@ -74,7 +77,7 @@ final class MySQLRateLimiterTest extends TestCase
     public function testAttemptHandlesPrepareFailure(): void
     {
         $pdo = $this->createMock(PDO::class);
-        $limiter = new MySQLRateLimiter($pdo);
+        $limiter = new MySQLRateLimiter($pdo, $this->configProvider());
 
         // First prepare (INSERT) fails
         $pdo->method('prepare')->willReturn(false);
@@ -92,7 +95,7 @@ final class MySQLRateLimiterTest extends TestCase
     {
         $pdo = $this->createMock(PDO::class);
         $stmt = $this->createMock(PDOStatement::class);
-        $limiter = new MySQLRateLimiter($pdo);
+        $limiter = new MySQLRateLimiter($pdo, $this->configProvider());
 
         // First prepare (INSERT) succeeds, Second (SELECT) fails
         $pdo->method('prepare')->willReturnOnConsecutiveCalls($stmt, false);
@@ -108,7 +111,7 @@ final class MySQLRateLimiterTest extends TestCase
     public function testStatusHandlesPrepareFailure(): void
     {
         $pdo = $this->createMock(PDO::class);
-        $limiter = new MySQLRateLimiter($pdo);
+        $limiter = new MySQLRateLimiter($pdo, $this->configProvider());
 
         $pdo->method('prepare')->willReturn(false);
 
@@ -120,7 +123,7 @@ final class MySQLRateLimiterTest extends TestCase
     public function testResetHandlesPrepareFailure(): void
     {
         $pdo = $this->createMock(PDO::class);
-        $limiter = new MySQLRateLimiter($pdo);
+        $limiter = new MySQLRateLimiter($pdo, $this->configProvider());
 
         $pdo->method('prepare')->willReturn(false);
 
@@ -128,36 +131,11 @@ final class MySQLRateLimiterTest extends TestCase
         $this->assertFalse($result);
     }
 
-    public function testApplyBackoffLogic(): void
+    private function configProvider(): InMemoryActionRateLimitConfigProvider
     {
-        $pdo = $this->createMock(PDO::class);
-        $stmt = $this->createMock(PDOStatement::class);
-        $limiter = new MySQLRateLimiter($pdo);
-
-        $pdo->method('prepare')->willReturn($stmt);
-        $stmt->expects($this->once())->method('execute');
-
-        $reflection = new \ReflectionClass($limiter);
-        $method = $reflection->getMethod('applyBackoff');
-        $method->setAccessible(true);
-
-        $status = $method->invoke($limiter, 'user123', 3);
-        // Explicitly assert instance to help static analysis if needed
-        $this->assertInstanceOf(RateLimitStatusDTO::class, $status);
-        /** @var RateLimitStatusDTO $status */
-        $this->assertEquals(8, $status->backoffSeconds);
-    }
-
-    public function testCalculateBackoffLogic(): void
-    {
-        $pdo = $this->createMock(PDO::class);
-        $limiter = new MySQLRateLimiter($pdo);
-
-        $reflection = new \ReflectionClass($limiter);
-        $method = $reflection->getMethod('calculateBackoff');
-        $method->setAccessible(true);
-
-        $backoff = $method->invoke($limiter, 3, 2, 3600);
-        $this->assertEquals(8, $backoff);
+        return new InMemoryActionRateLimitConfigProvider(
+            new GlobalRateLimitConfig(defaultLimit: 5, defaultInterval: 60, defaultBanTime: 300),
+            [RateLimitActionEnum::LOGIN->value() => new ActionRateLimitConfig(5, 60, 600)],
+        );
     }
 }

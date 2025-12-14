@@ -42,11 +42,18 @@ use Psr\Http\Server\MiddlewareInterface;
  * use Maatify\RateLimiter\Enums\RateLimitActionEnum;
  * use Maatify\RateLimiter\Enums\PlatformEnum;
  * use Maatify\RateLimiter\Drivers\RedisRateLimiter;
+ * use Maatify\RateLimiter\Config\GlobalRateLimitConfig;
+ * use Maatify\RateLimiter\Config\ActionRateLimitConfig;
+ * use Maatify\RateLimiter\Config\InMemoryActionRateLimitConfigProvider;
  * use Redis;
  *
  * $redis = new Redis();
  * $redis->connect('127.0.0.1');
- * $limiter = new RedisRateLimiter($redis);
+ * $configProvider = new InMemoryActionRateLimitConfigProvider(
+ *     new GlobalRateLimitConfig(defaultLimit: 5, defaultInterval: 60, defaultBanTime: 300),
+ *     [RateLimitActionEnum::LOGIN->value => new ActionRateLimitConfig(5, 60, 600)]
+ * );
+ * $limiter = new RedisRateLimiter($redis, $configProvider);
  *
  * $middleware = new RateLimitHeadersMiddleware(
  *     limiter: $limiter,

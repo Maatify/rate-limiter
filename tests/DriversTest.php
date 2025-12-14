@@ -15,7 +15,9 @@ declare(strict_types=1);
 namespace Maatify\RateLimiter\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Maatify\RateLimiter\Config\RateLimitConfig;
+use Maatify\RateLimiter\Config\ActionRateLimitConfig;
+use Maatify\RateLimiter\Config\GlobalRateLimitConfig;
+use Maatify\RateLimiter\Config\InMemoryActionRateLimitConfigProvider;
 use Maatify\RateLimiter\Enums\RateLimitActionEnum;
 
 /**
@@ -24,7 +26,7 @@ use Maatify\RateLimiter\Enums\RateLimitActionEnum;
  * 🎯 Purpose:
  * Validates configuration structure and integrity for the **maatify/rate-limiter** drivers.
  * Ensures that all defined rate-limit actions (via {@see RateLimitActionEnum})
- * return properly structured configurations from {@see RateLimitConfig}.
+ * return properly structured configurations from the in-memory provider.
  *
  * ⚙️ Focus:
  * - Verifies presence of required configuration keys.
@@ -40,17 +42,21 @@ use Maatify\RateLimiter\Enums\RateLimitActionEnum;
 final class DriversTest extends TestCase
 {
     /**
-     * 🧠 Test configuration structure returned by RateLimitConfig.
+     * 🧠 Test configuration structure returned by the in-memory provider.
      *
-     * 🎯 Ensures each rate-limit action has a `limit` and `interval` key defined.
+     * 🎯 Ensures each rate-limit action has immutable configuration available.
      */
     public function testConfigValues(): void
     {
-        // 🔹 Retrieve configuration for LOGIN action
-        $login = RateLimitConfig::get(RateLimitActionEnum::LOGIN->value);
+        $provider = new InMemoryActionRateLimitConfigProvider(
+            new GlobalRateLimitConfig(defaultLimit: 5, defaultInterval: 60, defaultBanTime: 300),
+            [RateLimitActionEnum::LOGIN->value => new ActionRateLimitConfig(5, 60, 600)]
+        );
 
-        // ✅ Check that required keys exist
-        $this->assertArrayHasKey('limit', $login, 'Config must contain a "limit" key.');
-        $this->assertArrayHasKey('interval', $login, 'Config must contain an "interval" key.');
+        $login = $provider->getForAction(RateLimitActionEnum::LOGIN);
+
+        $this->assertInstanceOf(ActionRateLimitConfig::class, $login);
+        $this->assertSame(5, $login->limit());
+        $this->assertSame(60, $login->interval());
     }
 }

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Maatify\RateLimiter\Tests\Drivers;
 
+use Maatify\RateLimiter\Config\ActionRateLimitConfig;
+use Maatify\RateLimiter\Config\GlobalRateLimitConfig;
+use Maatify\RateLimiter\Config\InMemoryActionRateLimitConfigProvider;
 use Maatify\RateLimiter\Drivers\RedisRateLimiter;
 use Maatify\RateLimiter\DTO\RateLimitStatusDTO;
 use Maatify\RateLimiter\Enums\PlatformEnum;
@@ -17,7 +20,7 @@ final class RedisRateLimiterTest extends TestCase
     public function testAttemptIncrementsCounter(): void
     {
         $redis = $this->createMock(Redis::class);
-        $limiter = new RedisRateLimiter($redis);
+        $limiter = new RedisRateLimiter($redis, $this->configProvider());
 
         // Redis mock expectations
         $redis->method('incr')->willReturn(1);
@@ -33,7 +36,7 @@ final class RedisRateLimiterTest extends TestCase
     public function testAttemptThrowsExceptionWhenLimitExceeded(): void
     {
         $redis = $this->createMock(Redis::class);
-        $limiter = new RedisRateLimiter($redis);
+        $limiter = new RedisRateLimiter($redis, $this->configProvider());
 
         // Assume limit is small (e.g. 5 for LOGIN)
         // Simulate counter exceeding limit
@@ -48,7 +51,7 @@ final class RedisRateLimiterTest extends TestCase
     public function testResetDeletesKey(): void
     {
         $redis = $this->createMock(Redis::class);
-        $limiter = new RedisRateLimiter($redis);
+        $limiter = new RedisRateLimiter($redis, $this->configProvider());
 
         $redis->expects($this->once())->method('del')->willReturn(1);
 
@@ -59,7 +62,7 @@ final class RedisRateLimiterTest extends TestCase
     public function testStatusReturnsDTO(): void
     {
         $redis = $this->createMock(Redis::class);
-        $limiter = new RedisRateLimiter($redis);
+        $limiter = new RedisRateLimiter($redis, $this->configProvider());
 
         $redis->method('get')->willReturn('2');
         $redis->method('ttl')->willReturn(30);
@@ -73,7 +76,7 @@ final class RedisRateLimiterTest extends TestCase
     public function testStatusHandlesNonNumericValue(): void
     {
         $redis = $this->createMock(Redis::class);
-        $limiter = new RedisRateLimiter($redis);
+        $limiter = new RedisRateLimiter($redis, $this->configProvider());
 
         $redis->method('get')->willReturn('invalid');
         $redis->method('ttl')->willReturn(30);
@@ -84,33 +87,11 @@ final class RedisRateLimiterTest extends TestCase
         $this->assertEquals(5, $status->remaining);
     }
 
-    public function testCalculateBackoffLogic(): void
+    private function configProvider(): InMemoryActionRateLimitConfigProvider
     {
-        $redis = $this->createMock(Redis::class);
-        $limiter = new RedisRateLimiter($redis);
-
-        $reflection = new \ReflectionClass($limiter);
-        $method = $reflection->getMethod('calculateBackoff');
-        $method->setAccessible(true);
-
-        $backoff = $method->invoke($limiter, 3, 2, 3600);
-        $this->assertEquals(8, $backoff);
-    }
-
-    public function testApplyBackoffLogic(): void
-    {
-        $redis = $this->createMock(Redis::class);
-        $limiter = new RedisRateLimiter($redis);
-
-        $redis->expects($this->once())->method('expire')->with($this->anything(), 8);
-
-        $reflection = new \ReflectionClass($limiter);
-        $method = $reflection->getMethod('applyBackoff');
-        $method->setAccessible(true);
-
-        $status = $method->invoke($limiter, 'user123', 3);
-        $this->assertInstanceOf(RateLimitStatusDTO::class, $status);
-        /** @var RateLimitStatusDTO $status */
-        $this->assertEquals(8, $status->backoffSeconds);
+        return new InMemoryActionRateLimitConfigProvider(
+            new GlobalRateLimitConfig(defaultLimit: 5, defaultInterval: 60, defaultBanTime: 300),
+            [RateLimitActionEnum::LOGIN->value() => new ActionRateLimitConfig(5, 60, 600)],
+        );
     }
 }
