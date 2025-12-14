@@ -1,53 +1,54 @@
 <?php
 
 /**
- * 🎯 DTO Serialization Example
+ * DTO Serialization Example
  *
- * Demonstrates:
- * - Creating a RateLimitStatusDTO.
- * - Converting it to an array for JSON responses.
- * - Recreating the DTO from an array (useful for caching/storage).
- * - Verifying data integrity.
+ * Simulates: RateLimitStatusDTOTest::testToArrayAndFromArray
+ *
+ * This example demonstrates:
+ * 1. DTO instantiation
+ * 2. Serialization to array (toArray)
+ * 3. Re-instantiation from array (fromArray)
+ * 4. Data integrity verification
  */
-
-declare(strict_types=1);
 
 require __DIR__ . '/../../../vendor/autoload.php';
 
 use Maatify\RateLimiter\DTO\RateLimitStatusDTO;
 
-echo "📦 RateLimitStatusDTO Serialization\n";
-echo "-----------------------------------\n";
+echo "=== Scenario 1: Instantiate DTO ===\n";
 
-// 1. Create original DTO
-$original = new RateLimitStatusDTO(
-    limit: 100,
-    remaining: 42,
-    resetAfter: 300,
+$dto = new RateLimitStatusDTO(
+    limit: 10,
+    remaining: 5,
+    resetAfter: 60,
     retryAfter: null,
     blocked: false,
     backoffSeconds: null,
-    nextAllowedAt: '2025-12-31 23:59:59',
+    nextAllowedAt: null,
     source: 'action'
 );
 
-// 2. Convert to Array
-$asArray = $original->toArray();
+echo "DTO Created:\n";
+echo "Limit: " . $dto->limit . "\n";
+echo "Remaining: " . $dto->remaining . "\n";
+echo "Source: " . $dto->source . "\n";
 
-echo "1. Serialized to JSON:\n";
-echo json_encode($asArray, JSON_PRETTY_PRINT) . "\n\n";
+echo "\n=== Scenario 2: Convert to Array ===\n";
 
-// 3. Recreate from Array
-$restored = RateLimitStatusDTO::fromArray($asArray);
+$array = $dto->toArray();
+print_r($array);
 
-echo "2. Restored DTO Verification:\n";
-echo "Limit matches: " . ($original->limit === $restored->limit ? "✅" : "❌") . "\n";
-echo "Remaining matches: " . ($original->remaining === $restored->remaining ? "✅" : "❌") . "\n";
-echo "Next Allowed At matches: " . ($original->nextAllowedAt === $restored->nextAllowedAt ? "✅" : "❌") . "\n";
+echo "\n=== Scenario 3: Recreate from Array ===\n";
 
-// 4. Equality Check
-if ($original == $restored) {
-    echo "\n🎉 Success: Objects are equivalent.\n";
-} else {
-    echo "\n⚠️ Objects differ.\n";
-}
+$newDto = RateLimitStatusDTO::fromArray($array);
+
+// Verify equality
+$isEqual = (
+    $dto->limit === $newDto->limit &&
+    $dto->remaining === $newDto->remaining &&
+    $dto->resetAfter === $newDto->resetAfter &&
+    $dto->source === $newDto->source
+);
+
+echo "Equality Check: " . ($isEqual ? "PASS" : "FAIL") . "\n";
