@@ -119,10 +119,35 @@
       ]
     },
     {
+      "id": "phase4.5",
+      "title": "Architecture Stabilization",
+      "version": "0.4.5",
+      "status": "pending",
+      "summary": "Fix architectural boundaries before implementing global limiting and backoff features.",
+      "tasks": [
+        "Refactor RateLimitConfig into injectable immutable DTOs",
+        "Separate action-level config from global-level config",
+        "Refactor RateLimiterResolver to remove direct instantiation (no new Redis/PDO/Mongo)",
+        "Define proper placement and boundaries for Global IP Limiter (design only)",
+        "Ensure all core components are fully mockable",
+        "Achieve phpstan level max readiness"
+      ],
+      "depends_on": ["phase4"]
+    },
+    {
       "id": "phase5",
       "title": "Exponential Backoff & Global Limit",
       "version": "1.0.0",
-      "status": "completed",
+      "status": "blocked",
+      "missing": [
+        "Global IP Limiter architecture definition",
+        "Clear separation between GlobalConfig and ActionConfig",
+        "Backoff policy abstraction",
+        "Stable RateLimitStatusDTO contract",
+        "Testable resolver architecture",
+        "Global limiter test suite"
+      ],
+      "blocked_by": "phase4.5",
       "summary": "Adaptive backoff delays and global IP-based rate limiting.",
       "tasks": [
         "Add exponential backoff algorithm (2ⁿ logic)",
