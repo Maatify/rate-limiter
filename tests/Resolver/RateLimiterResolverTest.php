@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Maatify\RateLimiter\Tests\Resolver;
 
 use Maatify\RateLimiter\Contracts\RateLimiterInterface;
+use Maatify\RateLimiter\Resolver\EnforcingRateLimiter;
 use Maatify\RateLimiter\Resolver\RateLimiterResolver;
 use PHPUnit\Framework\TestCase;
 use InvalidArgumentException;
@@ -16,7 +17,7 @@ final class RateLimiterResolverTest extends TestCase
         $redisLimiter = $this->createMock(RateLimiterInterface::class);
         $resolver = new RateLimiterResolver(['redis' => $redisLimiter]);
 
-        $this->assertSame($redisLimiter, $resolver->resolve());
+        $this->assertInstanceOf(EnforcingRateLimiter::class, $resolver->resolve());
     }
 
     public function testResolveMongo(): void
@@ -24,7 +25,7 @@ final class RateLimiterResolverTest extends TestCase
         $mongoLimiter = $this->createMock(RateLimiterInterface::class);
         $resolver = new RateLimiterResolver(['mongo' => $mongoLimiter], 'mongo');
 
-        $this->assertSame($mongoLimiter, $resolver->resolve());
+        $this->assertInstanceOf(EnforcingRateLimiter::class, $resolver->resolve());
     }
 
     public function testResolveMySQL(): void
@@ -32,7 +33,7 @@ final class RateLimiterResolverTest extends TestCase
         $mysqlLimiter = $this->createMock(RateLimiterInterface::class);
         $resolver = new RateLimiterResolver(['mysql' => $mysqlLimiter], 'mysql');
 
-        $this->assertSame($mysqlLimiter, $resolver->resolve());
+        $this->assertInstanceOf(EnforcingRateLimiter::class, $resolver->resolve());
     }
 
     public function testResolveThrowsExceptionForUnknownDriver(): void
