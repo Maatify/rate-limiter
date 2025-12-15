@@ -43,8 +43,13 @@ final class InMemoryDriver implements RateLimiterInterface
     /** @var array<string, int> */
     private array $counts = [];
 
-    /** @var array<string, int> */
-    private array $limits = [];
+    /**
+     * @param array<string, int> $limits Map of storage key to limit.
+     */
+    public function __construct(
+        private array $limits = []
+    ) {
+    }
 
     public function setLimit(string $key, int $limit): void
     {
@@ -88,7 +93,7 @@ final class InMemoryDriver implements RateLimiterInterface
 
     private function buildKey(string $key, RateLimitActionInterface $action, PlatformInterface $platform): string
     {
-        // Simple composite key simulation
+        // Simple composite key simulation: key:action:platform
         return sprintf('%s:%s:%s', $key, $action->value(), $platform->value());
     }
 }

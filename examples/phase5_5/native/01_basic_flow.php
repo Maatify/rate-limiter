@@ -8,25 +8,24 @@ require __DIR__ . '/InMemoryDriver.php';
 use Maatify\RateLimiter\Examples\Phase5_5\ExampleAction;
 use Maatify\RateLimiter\Examples\Phase5_5\ExamplePlatform;
 use Maatify\RateLimiter\Examples\Phase5_5\InMemoryDriver;
-use Maatify\RateLimiter\Resolver\EnforcingRateLimiter;
-use Maatify\RateLimiter\Resolver\ExponentialBackoffPolicy;
+use Maatify\RateLimiter\Resolver\RateLimiterResolver;
 
 // 1. Setup the dummy driver
 $driver = new InMemoryDriver();
 
-// 2. Setup the EnforcingRateLimiter (the main entry point)
-// Note: EnforcingRateLimiter requires a driver and a backoff policy.
-$rateLimiter = new EnforcingRateLimiter(
-    $driver,
-    new ExponentialBackoffPolicy()
-);
+// 2. Setup the Resolver (Entry Point)
+// The Resolver is configured with a map of drivers.
+$resolver = new RateLimiterResolver(['memory' => $driver], 'memory');
 
-// 3. Define the context
-$key = 'user_123';
+// 3. Resolve the RateLimiter instance
+$rateLimiter = $resolver->resolve();
+
+// 4. Define the context
+$key = 'user_01';
 $action = new ExampleAction('login');
 $platform = new ExamplePlatform('web');
 
-// 4. Perform an attempt
+// 5. Perform an attempt
 try {
     $status = $rateLimiter->attempt($key, $action, $platform);
 

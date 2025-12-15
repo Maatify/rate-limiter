@@ -9,18 +9,19 @@ use Maatify\RateLimiter\Examples\Phase5_5\ExampleAction;
 use Maatify\RateLimiter\Examples\Phase5_5\ExamplePlatform;
 use Maatify\RateLimiter\Examples\Phase5_5\InMemoryDriver;
 use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
-use Maatify\RateLimiter\Resolver\EnforcingRateLimiter;
-use Maatify\RateLimiter\Resolver\ExponentialBackoffPolicy;
+use Maatify\RateLimiter\Resolver\RateLimiterResolver;
 
 $driver = new InMemoryDriver();
 
 // Configure the driver to limit the GLOBAL scope to 1 request.
 // The EnforcingRateLimiter uses 'global' as the action and platform name for global checks.
-$driver->setLimit('user_123:global:global', 1);
+// Driver Key Format: key:action:platform
+$driver->setLimit('user_02:global:global', 1);
 
-$rateLimiter = new EnforcingRateLimiter($driver, new ExponentialBackoffPolicy());
+$resolver = new RateLimiterResolver(['memory' => $driver], 'memory');
+$rateLimiter = $resolver->resolve();
 
-$key = 'user_123';
+$key = 'user_02';
 $action = new ExampleAction('login');
 $platform = new ExamplePlatform('web');
 
@@ -40,7 +41,5 @@ try {
     if ($status) {
         echo "   Source: {$status->source}\n"; // Expected: 'global'
         echo "   Blocked: " . ($status->blocked ? 'Yes' : 'No') . "\n";
-        echo "   Retry After: {$status->retryAfter} seconds\n";
-        echo "   Backoff Seconds: {$status->backoffSeconds}\n";
     }
 }

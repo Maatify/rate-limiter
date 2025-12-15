@@ -9,21 +9,21 @@ use Maatify\RateLimiter\Examples\Phase5_5\ExampleAction;
 use Maatify\RateLimiter\Examples\Phase5_5\ExamplePlatform;
 use Maatify\RateLimiter\Examples\Phase5_5\InMemoryDriver;
 use Maatify\RateLimiter\Exceptions\TooManyRequestsException;
-use Maatify\RateLimiter\Resolver\EnforcingRateLimiter;
-use Maatify\RateLimiter\Resolver\ExponentialBackoffPolicy;
+use Maatify\RateLimiter\Resolver\RateLimiterResolver;
 
 $driver = new InMemoryDriver();
 
 // Global limit is high (10), so it won't block.
-$driver->setLimit('user_123:global:global', 10);
+$driver->setLimit('user_03:global:global', 10);
 
 // Action limit is strict (1).
 // Key format: key:action_name:platform_name
-$driver->setLimit('user_123:checkout:api', 1);
+$driver->setLimit('user_03:checkout:api', 1);
 
-$rateLimiter = new EnforcingRateLimiter($driver, new ExponentialBackoffPolicy());
+$resolver = new RateLimiterResolver(['memory' => $driver], 'memory');
+$rateLimiter = $resolver->resolve();
 
-$key = 'user_123';
+$key = 'user_03';
 $action = new ExampleAction('checkout');
 $platform = new ExamplePlatform('api');
 
@@ -41,6 +41,5 @@ try {
     if ($status) {
         echo "   Source: {$status->source}\n"; // Expected: 'action'
         echo "   Blocked: " . ($status->blocked ? 'Yes' : 'No') . "\n";
-        echo "   Retry After: {$status->retryAfter} seconds\n";
     }
 }
