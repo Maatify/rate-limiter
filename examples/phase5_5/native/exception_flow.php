@@ -26,7 +26,8 @@ try {
     echo "Message: " . $e->getMessage() . "\n";
     echo "Code: " . $e->getCode() . "\n";
 
-    $attachedStatus = $e->getStatus();
+    // Access property directly
+    $attachedStatus = $e->status;
     if ($attachedStatus) {
         echo "Attached Status Remaining: " . $attachedStatus->remaining . "\n";
         echo "Attached Status RetryAfter: " . $attachedStatus->retryAfter . "\n";

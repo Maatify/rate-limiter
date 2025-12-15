@@ -68,7 +68,13 @@ try {
     echo "Attempting SMS send (simulating 12th attempt on limit 10)...\n";
     $limiter->attempt('user_789', $action, $platform);
 } catch (TooManyRequestsException $e) {
-    $status = $e->getStatus();
+    // Access the status property directly
+    $status = $e->status;
+
+    // EnforcingRateLimiter (via applyBackoff) ensures $status is not null here in real usage
+    if ($status === null) {
+        exit("Error: Status should be enriched by EnforcingRateLimiter\n");
+    }
 
     echo "Blocked: " . ($status->blocked ? 'Yes' : 'No') . "\n";
     echo "Retry After: " . $status->retryAfter . " seconds\n"; // Expected: 4

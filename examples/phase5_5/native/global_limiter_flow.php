@@ -63,7 +63,8 @@ try {
 } catch (TooManyRequestsException $e) {
     echo "Caught expected exception: " . $e->getMessage() . "\n";
 
-    $status = $e->getStatus();
+    // Use property access for status, not getStatus()
+    $status = $e->status;
     if ($status) {
         echo "Source of block: " . $status->source . "\n"; // Expected: global
     }
