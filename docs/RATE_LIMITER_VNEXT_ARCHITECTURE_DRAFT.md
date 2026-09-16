@@ -8,7 +8,7 @@ This document defines the intended direction for the next major evolution of `ma
 
 It is deliberately **not** an implementation plan, migration checklist, release plan, or compatibility promise. Its purpose is to establish the architectural target first, so that the implementation can later be decomposed into explicit stacked phases with clear acceptance criteria.
 
-This Draft is governed by [`RATE_LIMITER_VNEXT_EXECUTION_GOVERNANCE.md`](RATE_LIMITER_VNEXT_EXECUTION_GOVERNANCE.md). Standards adoption, standards compliance, and Draft-bound execution are mandatory closure conditions before this Draft may merge into `main`.
+This Draft is governed by [`RATE_LIMITER_VNEXT_EXECUTION_GOVERNANCE.md`](RATE_LIMITER_VNEXT_EXECUTION_GOVERNANCE.md). Pinned standards adoption preparation/resolution, standards compliance, and Draft-bound execution are mandatory closure conditions before this Draft may merge into `main`; canonical adoption becomes effective when the prepared adoption state reaches the default branch.
 
 ---
 
@@ -431,19 +431,27 @@ Those decisions require a repository-level gap analysis first.
 
 ## 17. Required Standards and Execution Governance
 
-The vNext effort must formally adopt and comply with the applicable Maatify engineering standards before this Draft may merge into `main`.
+Before this Draft may merge into `main`, the repository must prepare, resolve, pin, validate, and reconcile a Selective Pinned Adoption set from `Maatify/php-engineering-standards`, and the final repository state must comply with the Final Resolved Applicable Standards Set for every activated scope.
 
-The canonical adoption mechanism is defined by `std-standards-adoption`, and the GitHub execution model must follow `std-github-phase-stack-workflow`, using exact pinned upstream standards rather than a floating branch.
+Canonical adoption becomes effective when the prepared adoption state is merged into the repository's default branch; therefore the Draft branch prepares and validates the adoption state, while the final owner-approved Draft merge makes it effective on `main`.
+
+Under the current standards baseline, this vNext effort requires at minimum:
+
+- the `composer-package` Profile for the standalone package engineering scope, and
+- the `repository-governance` Profile for the repository governance scope.
+
+The canonical adoption mechanism is defined by `std-standards-adoption`. The repository governance Profile brings the canonical `std-github-phase-stack-workflow` into the adoption graph rather than treating the workflow as an informal external rule. All standards and Profiles must come from the same exact pinned upstream commit unless a canonical, explicitly documented exception applies.
 
 The project-specific mandatory rules are defined in [`RATE_LIMITER_VNEXT_EXECUTION_GOVERNANCE.md`](RATE_LIMITER_VNEXT_EXECUTION_GOVERNANCE.md).
 
 For this vNext effort:
 
-- Standards adoption and compliance are Draft closure gates.
-- The applicable standards must be resolved from repository reality and artifact scope.
+- Pinned adoption preparation, applicability resolution, repository reconciliation, and standards compliance are Draft closure gates.
+- Compliance applies to every activated scope, not only to an informal subset of files described as vNext changes.
 - All vNext repository work must be performed under the `draft/rate-limiter-vnext-architecture` integration boundary.
 - vNext Work Branches / Execution Batches must integrate back into the Draft rather than bypass it and target `main` directly.
 - Only the completed, standards-compliant Draft integration state may be proposed for final merge into `main`.
+- Final `draft/rate-limiter-vnext-architecture -> main` integration is owner-only and must use GitHub Squash Merge after all closure gates pass.
 
 ---
 
