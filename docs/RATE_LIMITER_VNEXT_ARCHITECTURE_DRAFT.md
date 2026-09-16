@@ -8,6 +8,8 @@ This document defines the intended direction for the next major evolution of `ma
 
 It is deliberately **not** an implementation plan, migration checklist, release plan, or compatibility promise. Its purpose is to establish the architectural target first, so that the implementation can later be decomposed into explicit stacked phases with clear acceptance criteria.
 
+This Draft is governed by [`RATE_LIMITER_VNEXT_EXECUTION_GOVERNANCE.md`](RATE_LIMITER_VNEXT_EXECUTION_GOVERNANCE.md). Standards adoption, standards compliance, and Draft-bound execution are mandatory closure conditions before this Draft may merge into `main`.
+
 ---
 
 ## 1. Context
@@ -427,7 +429,25 @@ Those decisions require a repository-level gap analysis first.
 
 ---
 
-## 17. Required Next Step
+## 17. Required Standards and Execution Governance
+
+The vNext effort must formally adopt and comply with the applicable Maatify engineering standards before this Draft may merge into `main`.
+
+The canonical adoption mechanism is defined by `std-standards-adoption`, and the GitHub execution model must follow `std-github-phase-stack-workflow`, using exact pinned upstream standards rather than a floating branch.
+
+The project-specific mandatory rules are defined in [`RATE_LIMITER_VNEXT_EXECUTION_GOVERNANCE.md`](RATE_LIMITER_VNEXT_EXECUTION_GOVERNANCE.md).
+
+For this vNext effort:
+
+- Standards adoption and compliance are Draft closure gates.
+- The applicable standards must be resolved from repository reality and artifact scope.
+- All vNext repository work must be performed under the `draft/rate-limiter-vnext-architecture` integration boundary.
+- vNext Work Branches / Execution Batches must integrate back into the Draft rather than bypass it and target `main` directly.
+- Only the completed, standards-compliant Draft integration state may be proposed for final merge into `main`.
+
+---
+
+## 18. Required Next Step
 
 Before implementation begins, produce a formal **Rate Limiter vNext Gap Analysis and Migration Blueprint** covering both:
 
@@ -444,13 +464,13 @@ The analysis should identify, at contract/file/capability level:
 - Which storage semantics are required.
 - Which adapters satisfy which capabilities today.
 - Which compatibility breaks are unavoidable.
-- How the work should be split into stacked implementation phases.
+- How the work should be split into dependency-aware stacked implementation phases / execution batches under the Draft boundary.
 
 No implementation should be started from this draft alone.
 
 ---
 
-## 18. Target Outcome
+## 19. Target Outcome
 
 The desired end state is a standalone Rate Limiter that combines:
 
